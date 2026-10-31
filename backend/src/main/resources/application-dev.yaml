@@ -1,0 +1,14 @@
+spring:
+	datasource:
+		driver-class-name: org.postgresql.Driver
+		username: postgres
+		password: admin
+		url: jdbc:postgresql://localhost:5432/petajuda_dev
+	jpa:
+		properties:
+			hibernate:
+				dialect: org.hibernate.dialect.PostgreSQLDialect
+		generate-ddl: true
+		hibernate:
+			ddl-auto: none
+		show-sql: false

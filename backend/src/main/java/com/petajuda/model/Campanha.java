@@ -10,6 +10,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 
@@ -46,7 +47,7 @@ public class Campanha {
 
     // Ong vinculada a camapanha
     @ManyToOne
-    @Column(name = "ong", nullable = false, length = 50)
+    @JoinColumn(name = "ong_id", nullable = false)
     private Ong ong;
 
     // Construtor sem argumentos

@@ -9,6 +9,7 @@ import com.petajuda.enums.StatusPublicacao;
 import com.petajuda.enums.TipoPublicacao;
 
 import jakarta.persistence.Column;
+import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -16,6 +17,7 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 
@@ -53,16 +55,16 @@ public class Publicacao {
 
     // Usuario vinculado a publicacao
     @ManyToOne(fetch = FetchType.EAGER)
-    @Column(name = "usuario", nullable = false, length = 50)
+    @JoinColumn(name = "usuario_id", nullable = false)
     private Usuario usuario;
     
     // Animal vinculado a publicacao
     @ManyToOne(fetch = FetchType.EAGER)
-    @Column(name = "animal", nullable = false, length = 50)
+    @JoinColumn(name = "animal_id", nullable = false)
     private Animal animal;
     
     // Endereco vinculado a publicacao
-    @Column(name = "endereco", nullable = false, length = 50)
+    @Embedded
     private Endereco endereco;
 
     // Construtor sem argumentos

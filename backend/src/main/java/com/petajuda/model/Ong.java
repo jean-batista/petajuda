@@ -6,6 +6,7 @@ import java.util.UUID;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
+import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -47,7 +48,7 @@ public class Ong {
     private List<Campanha> campanhas = new ArrayList<>();
 
     // Endereco vinculado a ong
-    @Column(name = "endereco", nullable = false, length = 50)
+    @Embedded
     private Endereco endereco;
 
     // Construtor sem argumentos

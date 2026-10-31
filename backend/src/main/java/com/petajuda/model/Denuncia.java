@@ -8,6 +8,7 @@ import org.hibernate.annotations.CreationTimestamp;
 import com.petajuda.enums.StatusDenuncia;
 
 import jakarta.persistence.Column;
+import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -46,7 +47,7 @@ public class Denuncia {
     @Column(name = "status", nullable = false, length = 50)
     private StatusDenuncia status;
 
-    @Column(name = "endereco", nullable = false, length = 50)
+    @Embedded
     private Endereco endereco;
 
     // Construtor sem argumentos

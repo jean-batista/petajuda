@@ -7,4 +7,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import com.petajuda.model.Usuario;
 
 public interface UsuarioRepository extends JpaRepository<Usuario, UUID> {
+    Usuario findByEmail(String email);
 }

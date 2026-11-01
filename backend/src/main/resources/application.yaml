@@ -1,5 +1,10 @@
 server:
   port: 8080
+security:
+  jwt:
+    token:
+      secret-key: ${JWT_TOKEN_SECRET_KEY}
+      expire-length: ${JWT_TOKEN_EXPIRE_LENGTH}
 spring:
   application:
     name: petajuda

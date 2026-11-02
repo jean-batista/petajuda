@@ -1,5 +1,6 @@
 package com.petajuda.security.details;
 
+import com.petajuda.enums.PerfilUsuario;
 import com.petajuda.model.Usuario;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -16,14 +17,16 @@ public class CustomUserDetails implements UserDetails {
     private final String username;
     private final String password;
     private final boolean active;
+    private final PerfilUsuario tipoPerfil;
     private final Collection<? extends GrantedAuthority> authorities;
 
     public CustomUserDetails(Usuario usuario) {
         this.id = usuario.getId();
         this.fullName = usuario.getNome() + " " + usuario.getSobrenome();
-        this.username = usuario.getEmail(); // O email sera usado como username do Usuario
+        this.username = usuario.getEmail(); // O email será usado como username do Usuario
         this.password = usuario.getSenha();
         this.active = usuario.getAtivo();
+        this.tipoPerfil = usuario.getTipoPerfil();
         this.authorities = List.of(new SimpleGrantedAuthority("ROLE_" + usuario.getTipoPerfil().name()));
     }
 
@@ -33,6 +36,10 @@ public class CustomUserDetails implements UserDetails {
 
     public String getFullName() {
         return fullName;
+    }
+
+    public PerfilUsuario getTipoPerfil() {
+        return tipoPerfil;
     }
 
     @Override

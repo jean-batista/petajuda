@@ -4,7 +4,7 @@ import com.auth0.jwt.JWT;
 import com.auth0.jwt.JWTVerifier;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.interfaces.DecodedJWT;
-import com.petajuda.dtos.response.UsuarioInfoResponse;
+import com.petajuda.dtos.response.UsuarioAutenticacaoInfoResponse;
 import com.petajuda.enums.PerfilUsuario;
 import com.petajuda.exceptions.TokenInvalidoException;
 import jakarta.annotation.PostConstruct;
@@ -39,7 +39,7 @@ public class JwtTokenProvider {
         this.algorithm = Algorithm.HMAC256(key.getBytes());
     }
 
-    public UsuarioInfoResponse createToken(UUID id, String nomeCompleto, String usuario, Set<PerfilUsuario> perfil) {
+    public UsuarioAutenticacaoInfoResponse createToken(UUID id, String nomeCompleto, String usuario, PerfilUsuario perfil) {
         Date now = new Date();
         Date validity = new Date(now.getTime() + validityTimeInMilliseconds);
         String issueUrl = ServletUriComponentsBuilder.fromCurrentContextPath().build().toUriString();
@@ -47,28 +47,28 @@ public class JwtTokenProvider {
         String token = JWT.create()
                 .withClaim("id", id.toString())
                 .withClaim("nomeCompleto", nomeCompleto)
-                .withClaim("perfil", perfil.stream().map(PerfilUsuario::name).toList())
+                .withClaim("perfil", perfil.toString())
                 .withIssuedAt(now)
                 .withExpiresAt(validity)
                 .withSubject(usuario)
                 .withIssuer(issueUrl)
                 .sign(algorithm);
 
-        return new UsuarioInfoResponse(id, nomeCompleto, usuario, perfil, token);
+        return new UsuarioAutenticacaoInfoResponse(id, nomeCompleto, usuario, perfil, token);
     }
 
-    public UsuarioInfoResponse refreshToken(String refreshToken) {
+    public UsuarioAutenticacaoInfoResponse refreshToken(String refreshToken) {
         if(!refreshToken.contains("Bearer ")) throw new TokenInvalidoException("Token JWT inválido");
         String token = refreshToken.substring("Bearer ".length());
         JWTVerifier verifier = JWT.require(algorithm).build();
         DecodedJWT decodedJWT = verifier.verify(token);
 
         UUID id = UUID.fromString(decodedJWT.getClaim("id").asString());
-        String fullName = decodedJWT.getClaim("fullName").asString();
-        String username = decodedJWT.getSubject();
-        Set<PerfilUsuario> roles = new HashSet<>(decodedJWT.getClaim("roles").asList(PerfilUsuario.class));
+        String nomeCompleto = decodedJWT.getClaim("nomeCompleto").asString();
+        String email = decodedJWT.getSubject();
+        PerfilUsuario perfil = decodedJWT.getClaim("perfil").as(PerfilUsuario.class);
 
-        return createToken(id, fullName, username, roles);
+        return createToken(id, nomeCompleto, email, perfil);
     }
 
     public Authentication getAuthentication(String token) {

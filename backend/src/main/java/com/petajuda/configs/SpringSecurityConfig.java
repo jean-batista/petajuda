@@ -64,9 +64,9 @@ public class SpringSecurityConfig {
                                 .requestMatchers("/error").permitAll()
                                 .requestMatchers(
                                         HttpMethod.POST,
-                                        "/api/v1/auth/login",
-                                        "/api/v1/auth/register",
-                                        "/api/v1/auth/refresh").permitAll()
+                                        "/api/v1/autenticacao/login",
+                                        "/api/v1/autenticacao/cadastro",
+                                        "/api/v1/autenticacao/refresh").permitAll()
                                 .anyRequest().authenticated()
                 )
                 .cors(cors -> {})

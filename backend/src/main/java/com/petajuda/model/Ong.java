@@ -12,6 +12,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
+import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 
 @Entity
@@ -43,6 +44,10 @@ public class Ong {
     @Column(name = "descricao", nullable = false, columnDefinition = "TEXT")
     private String descricao;
 
+    // Usuario vinculado a Ong
+    @OneToOne
+    private Usuario usuario;
+
     // Capanhas realizadas pela ong
     @OneToMany(mappedBy = "ong", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Campanha> campanhas = new ArrayList<>();
@@ -57,13 +62,14 @@ public class Ong {
 
     // Construtor com argumentos
     public Ong(UUID id, String nome, String razaoSocial, String cnpj, String chavePix, String descricao,
-            List<Campanha> campanhas, Endereco endereco) {
+            Usuario usuario, List<Campanha> campanhas, Endereco endereco) {
         this.id = id;
         this.nome = nome;
         this.razaoSocial = razaoSocial;
         this.cnpj = cnpj;
         this.chavePix = chavePix;
         this.descricao = descricao;
+        this.usuario = usuario;
         this.campanhas = campanhas;
         this.endereco = endereco;
     }
@@ -92,6 +98,10 @@ public class Ong {
 
     public String getDescricao() {
         return descricao;
+    }
+
+    public Usuario getUsuario() {
+        return usuario;
     }
 
     public List<Campanha> getCampanhas() {
@@ -128,6 +138,10 @@ public class Ong {
         this.descricao = descricao;
     }
 
+    public void setUsuario(Usuario usuario) {
+        this.usuario = usuario;
+    }
+
     public void setCampanhas(List<Campanha> campanhas) {
         this.campanhas = campanhas;
     }
@@ -162,7 +176,5 @@ public class Ong {
             return false;
         return true;
     }
-
-    
 
 }

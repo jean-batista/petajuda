@@ -18,6 +18,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
+import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 
 @Entity
@@ -63,6 +64,10 @@ public class Usuario {
     @Column(name = "perfil_usuario", nullable = false, length = 50)
     private PerfilUsuario tipoPerfil;
 
+    // Ong associada ao usuario (caso nao houver, esse campo sera null)
+    @OneToOne(mappedBy = "usuario", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Ong ong;
+
     // Lista dos animais vinculados ao usuario
     @OneToMany(mappedBy = "usuario", cascade = CascadeType.ALL, orphanRemoval = true) // Mapeia o campo `usuario` na `tabela_animal`
     private List<Animal> animais = new ArrayList<>();
@@ -77,7 +82,7 @@ public class Usuario {
 
     // Construtor com argumentos
     public Usuario(UUID id, String nome, String sobrenome, String email, String telefone, String senha, Boolean ativo,
-            LocalDateTime dataCriacao, PerfilUsuario tipoPerfil, List<Animal> animais, List<Publicacao> publicacoes) {
+            LocalDateTime dataCriacao, PerfilUsuario tipoPerfil, Ong ong, List<Animal> animais, List<Publicacao> publicacoes) {
         this.id = id;
         this.nome = nome;
         this.sobrenome = sobrenome;
@@ -87,6 +92,7 @@ public class Usuario {
         this.ativo = ativo;
         this.dataCriacao = dataCriacao;
         this.tipoPerfil = tipoPerfil;
+        this.ong = ong;
         this.animais = animais;
         this.publicacoes = publicacoes;
     }
@@ -129,6 +135,10 @@ public class Usuario {
         return tipoPerfil;
     }
 
+    public Ong getOng() {
+        return ong;
+    }
+
     public List<Animal> getAnimais() {
         return animais;
     }
@@ -169,6 +179,10 @@ public class Usuario {
 
     public void setDataCriacao(LocalDateTime dataCriacao) {
         this.dataCriacao = dataCriacao;
+    }
+
+    public void setOng(Ong ong) {
+        this.ong = ong;
     }
 
     public void setTipoPerfil(PerfilUsuario tipoPerfil) {

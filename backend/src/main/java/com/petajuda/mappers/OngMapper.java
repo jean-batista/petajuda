@@ -1,5 +1,7 @@
 package com.petajuda.mappers;
 
+import org.mapstruct.Mapper;
+
 import com.petajuda.dtos.request.OngRequest;
 import com.petajuda.dtos.response.OngResponse;
 import com.petajuda.model.Ong;

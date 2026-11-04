@@ -14,5 +14,7 @@ public record OngResponse(
     String chavePix,
     String descricao,
     List<Campanha> campanhas,
-    Endereco endereco
+    Endereco endereco,
+
+    UUID usuarioId
 ) {}

@@ -11,11 +11,13 @@ public record AnimalResponse(
     String nome,
     String sexo,
     String corPredominante,
-    Boolean cadastrado,
+    Boolean castrado,
     Boolean vacinado,
     String descricao,
     String fotoUrl,
     IdadeAnimal idade,
     PorteAnimal porte,
-    EspecieAnimal especie
+    EspecieAnimal especie,
+    
+    UUID usuarioId
 ) {}

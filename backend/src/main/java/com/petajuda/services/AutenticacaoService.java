@@ -1,6 +1,5 @@
 package com.petajuda.services;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.DisabledException;
@@ -23,21 +22,26 @@ import com.petajuda.security.jwt.JwtTokenProvider;
 @Service
 public class AutenticacaoService {
 
-    @Autowired
-    private AuthenticationManager authenticationManager;
+    // Dependencias da classe
+    private final AuthenticationManager authenticationManager;
+    private final UsuarioRepository usuarioRepository;
+    private final JwtTokenProvider jwtTokenProvider;
 
-    @Autowired
-    private UsuarioRepository usuarioRepository;
+    // Injecao das dependencias via construtor
+    public AutenticacaoService(AuthenticationManager authenticationManager, 
+                               UsuarioRepository usuarioRepository, 
+                               JwtTokenProvider jwtTokenProvider) {
+        this.authenticationManager = authenticationManager;
+        this.usuarioRepository = usuarioRepository;
+        this.jwtTokenProvider = jwtTokenProvider;
+    }
 
-    @Autowired
-    private JwtTokenProvider jwtTokenProvider;
-
+    // Autentica um Usuario no sistema
     public UsuarioAutenticacaoInfoResponse login(UsuarioCredenciaisRequest credenciais) {
         Authentication auth = authenticateUser(credenciais.email(), credenciais.senha());
         CustomUserDetails principal = (CustomUserDetails) auth.getPrincipal();
         
-        // Obtém o perfil único diretamente do principal (ou do usuário)
-        PerfilUsuario perfilUsuario = principal.getTipoPerfil(); // ou principal.getPerfil()
+        PerfilUsuario perfilUsuario = principal.getTipoPerfil();
 
         return jwtTokenProvider.createToken(
                 principal.getId(),
@@ -47,31 +51,29 @@ public class AutenticacaoService {
         );
     }
 
+    // Atualiza o token de um Usuario
     public UsuarioAutenticacaoInfoResponse refreshToken(String token) {
         if(token == null) throw new TokenInvalidoException("O token não pode ser nulo");
         if(!validateCurrentToken(token)) throw new TokenInvalidoException("Token inválido");
         return jwtTokenProvider.refreshToken(token);
     }
 
+    // Metodo auxiliar que contem a logica de autenticacao
     private Authentication authenticateUser(String username, String password) {
         try {
             return authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(username, password)
             );
         } catch (DisabledException e) {
-            // O Spring lança esta exceção se user.getActive() == false
             throw new UsuarioNaoAutorizadoException("Usuário inativo");
-
         } catch (BadCredentialsException e) {
-            // O Spring lança esta exceção se a senha estiver errada ou o usuário não existir
             throw new UsuarioNaoAutorizadoException("Usuário ou senha inválidos");
-
         } catch (AuthenticationException e) {
-            // Captura qualquer outro erro de segurança que possa ocorrer
             throw new UsuarioNaoAutorizadoException("Falha na autenticação");
         }
     }
 
+    // Metodo auxiliar para validar se um token esta valido
     private boolean validateCurrentToken(String token) {
         String tokenWithoutBearer = getCleanToken(token);
         if (!jwtTokenProvider.validateToken(tokenWithoutBearer)) return false;
@@ -83,6 +85,7 @@ public class AutenticacaoService {
         return true;
     }
 
+    // Metodo auxiliar para limpar o `Bearer` do token
     private String getCleanToken(String token) {
         if(!token.contains("Bearer ")) throw new TokenInvalidoException("Token inválido");
         return token.substring("Bearer ".length());

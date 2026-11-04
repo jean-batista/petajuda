@@ -20,18 +20,23 @@ import com.petajuda.repositories.UsuarioRepository;
 @Service 
 public class AnimalService {
 
+    // Dependencias da classe
     private final AnimalRepository repository;
     private final UsuarioRepository usuarioRepository;
     private final AnimalMapper mapper;
 
+    // Injecao das dependencias via construtor
     public AnimalService(AnimalRepository repository, UsuarioRepository usuarioRepository, AnimalMapper mapper) {
         this.repository = repository;
         this.usuarioRepository = usuarioRepository;
         this.mapper = mapper;
     }
 
+    // Cadastra um Animal
     @Transactional
     public AnimalResponse salvar(UUID usuarioId, AnimalRequest animalDto) {
+
+        // Verifica se o Usuario existe
         Usuario usuario = usuarioRepository.findById(usuarioId)
             .orElseThrow(() -> new RecursoNaoEncontradoException("Usuário inexistente com o id: " + usuarioId));
         
@@ -41,31 +46,40 @@ public class AnimalService {
         return mapper.paraDto(repository.save(entidade));
     }
 
+    // Busca um Animal usando o seu id
     @Transactional(readOnly = true)
     public AnimalResponse buscarPorId(UUID animalId) {
+
+        // Verifica se o Animal existe
         Animal animal = repository.findById(animalId).orElseThrow(
             () -> new AnimalNaoEcontradoException("Não foi possível encontrar um animal com o id: " + animalId)
         );
         return mapper.paraDto(animal);
     }
 
+    // Busca todos os animais que um Usuario possui cadastrado
     @Transactional(readOnly = true)
     public List<AnimalResponse> buscarAnimaisPorUsuarioId(UUID usuarioId) {
+
+        // Verifica se o Usuario existe
         if (!usuarioRepository.existsById(usuarioId)) {
             throw new RecursoNaoEncontradoException("Usuário não encontrado.");
         }
 
-        return repository.buscarAnimalPorUsuarioId(usuarioId)
+        return repository.findByUsuarioId(usuarioId)
             .stream().map(mapper::paraDto).toList();
     }
 
+    // Atualiza os dados de um Animal
     @Transactional
     public AnimalResponse atualizar(UUID usuarioLogadoId, UUID animalId, AnimalRequest animalRequest) {
+
+        // Verifica se o Animal existe
         Animal entidade = repository.findById(animalId).orElseThrow(
             () -> new AnimalNaoEcontradoException("Não foi possível encontrar um animal com o id: " + animalId)
         );
 
-        // VALIDAÇÃO DE POSSE (Ownership): Garante que o animal pertence ao usuário logado
+        // Verifica se o Usuario possui permissao para editar o cadastro do Animal
         if (!entidade.getUsuario().getId().equals(usuarioLogadoId)) {
             throw new UsuarioNaoAutorizadoException("Você não tem permissão para editar o cadastro deste animal.");
         }
@@ -74,12 +88,16 @@ public class AnimalService {
         return mapper.paraDto(repository.save(entidade));
     }
 
+    // Apaga o cadastro de um Animal
     @Transactional
     public void excluir(UUID usuarioLogadoId, UUID animalId) {
+
+        // Verifica se o Animal existe
         Animal entidade = repository.findById(animalId).orElseThrow(
             () -> new AnimalNaoEcontradoException("Não foi possível encontrar um animal com o id: " + animalId)
         );
 
+        // Verifica se o Usuario possui permissao para excluir o Animal
         if (!entidade.getUsuario().getId().equals(usuarioLogadoId)) {
             throw new UsuarioNaoAutorizadoException("Você não tem permissão para excluir este animal.");
         }
@@ -87,6 +105,7 @@ public class AnimalService {
         repository.delete(entidade);
     }
 
+    // Metodo auxiliar para modificar os dados de um Animal
     private void atualizarDadosEntidade(Animal entidade, AnimalRequest dto) {
         if(dto.nome() != null) entidade.setNome(dto.nome());
         if(dto.sexo() != null) entidade.setSexo(dto.sexo());

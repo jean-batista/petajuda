@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
+import com.petajuda.controllers.docs.OngControllerDoc;
 import com.petajuda.dtos.request.OngRequest;
 import com.petajuda.dtos.response.OngResponse;
 import com.petajuda.security.details.CustomUserDetails;
@@ -25,15 +26,18 @@ import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/v1/ongs")
-public class OngController {
+public class OngController implements OngControllerDoc {
 
+    // Dependencias da classe
     private final OngService ongService;
 
+    // Injecao das dependencias via controller
     public OngController(OngService ongService) {
         this.ongService = ongService;
     }
 
     // Cadastra uma nova ONG vinculada ao usuario logado
+    @Override
     @PostMapping
     public ResponseEntity<OngResponse> salvar(
             @AuthenticationPrincipal CustomUserDetails userDetails,
@@ -47,6 +51,7 @@ public class OngController {
     }
 
     // Busca uma ONG especifica por ID
+    @Override
     @GetMapping("/{id}")
     public ResponseEntity<OngResponse> buscarPorId(@PathVariable UUID id) {
         OngResponse response = ongService.buscarPorId(id);
@@ -54,6 +59,7 @@ public class OngController {
     }
 
     // Lista todas as ONGs cadastradas no sistema
+    @Override
     @GetMapping
     public ResponseEntity<List<OngResponse>> buscarOngs() {
         List<OngResponse> ongs = ongService.buscarOngs();
@@ -61,6 +67,7 @@ public class OngController {
     }
 
     // Atualiza os dados da propria ONG do usuario logado
+    @Override
     @PutMapping("/{id}")
     public ResponseEntity<OngResponse> atualizar(
             @AuthenticationPrincipal CustomUserDetails userDetails,
@@ -71,6 +78,7 @@ public class OngController {
     }
 
     // Exclui a ONG do usuario logado
+    @Override
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> excluir(
             @AuthenticationPrincipal CustomUserDetails userDetails,

@@ -10,3 +10,8 @@ spring:
     url: ${spring.datasource.url}
     user: ${spring.datasource.username}
     password: ${spring.datasource.password}
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false

@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
+import com.petajuda.controllers.docs.PublicacaoControllerDoc;
 import com.petajuda.dtos.request.PublicacaoRequest;
 import com.petajuda.dtos.response.PublicacaoResponse;
 import com.petajuda.enums.StatusPublicacao;
@@ -28,15 +29,18 @@ import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/v1/publicacoes")
-public class PublicacaoController {
+public class PublicacaoController implements PublicacaoControllerDoc {
 
+    // Dependencias da classe
     private final PublicacaoService publicacaoService;
 
+    // Injecao das dependencias via construtor
     public PublicacaoController(PublicacaoService publicacaoService) {
         this.publicacaoService = publicacaoService;
     }
 
     // Cria uma nova publicacao
+    @Override
     @PostMapping
     public ResponseEntity<PublicacaoResponse> salvar(
             @AuthenticationPrincipal CustomUserDetails userDetails,
@@ -50,6 +54,7 @@ public class PublicacaoController {
     }
 
     // Busca uma publicacao específica por ID
+    @Override
     @GetMapping("/{id}")
     public ResponseEntity<PublicacaoResponse> buscarPorId(@PathVariable UUID id) {
         PublicacaoResponse response = publicacaoService.buscarPorId(id);
@@ -57,6 +62,7 @@ public class PublicacaoController {
     }
 
     // Feed geral publico de publicacoes
+    @Override
     @GetMapping
     public ResponseEntity<List<PublicacaoResponse>> buscarTodas() {
         List<PublicacaoResponse> publicacoes = publicacaoService.buscarTodas();
@@ -64,6 +70,7 @@ public class PublicacaoController {
     }
 
     // Atualiza o conteudo de uma publicacao do usuario logado
+    @Override
     @PutMapping("/{id}")
     public ResponseEntity<PublicacaoResponse> atualizar(
             @AuthenticationPrincipal CustomUserDetails userDetails,
@@ -74,6 +81,7 @@ public class PublicacaoController {
     }
 
     // Altera o status da publicacao
+    @Override
     @PatchMapping("/{id}/status")
     public ResponseEntity<PublicacaoResponse> alterarStatus(
             @AuthenticationPrincipal CustomUserDetails userDetails,
@@ -84,6 +92,7 @@ public class PublicacaoController {
     }
 
     // Exclui uma publicacao pertencente ao usuario logado
+    @Override
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> excluir(
             @AuthenticationPrincipal CustomUserDetails userDetails,

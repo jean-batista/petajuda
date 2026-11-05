@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
+import com.petajuda.controllers.docs.CampanhaControllerDoc;
 import com.petajuda.dtos.request.CampanhaRequest;
 import com.petajuda.dtos.response.CampanhaResponse;
 import com.petajuda.security.details.CustomUserDetails;
@@ -27,7 +28,7 @@ import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/v1/campanhas")
-public class CampanhaController {
+public class CampanhaController implements CampanhaControllerDoc {
 
     // Dependencias da classe
     private final CampanhaService campanhaService;
@@ -38,6 +39,7 @@ public class CampanhaController {
     }
 
     // Cadastra uma nova campanha vinculada a ONG do usuario logado
+    @Override
     @PostMapping
     public ResponseEntity<CampanhaResponse> salvar(
             @AuthenticationPrincipal CustomUserDetails userDetails,
@@ -51,6 +53,7 @@ public class CampanhaController {
     }
 
     // Busca uma campanha especifica por ID
+    @Override
     @GetMapping("/{id}")
     public ResponseEntity<CampanhaResponse> buscarPorId(@PathVariable UUID id) {
         CampanhaResponse response = campanhaService.buscarPorId(id);
@@ -58,6 +61,7 @@ public class CampanhaController {
     }
 
     // Lista todas as campanhas cadastradas no sistema
+    @Override
     @GetMapping
     public ResponseEntity<List<CampanhaResponse>> buscarTodas() {
         List<CampanhaResponse> campanhas = campanhaService.buscarTodas();
@@ -65,6 +69,7 @@ public class CampanhaController {
     }
 
     // Busca todas as campanhas de uma ONG especifica
+    @Override
     @GetMapping("/ong/{ongId}")
     public ResponseEntity<List<CampanhaResponse>> buscarPorOng(@PathVariable UUID ongId) {
         List<CampanhaResponse> campanhas = campanhaService.buscarPorOng(ongId);
@@ -72,6 +77,7 @@ public class CampanhaController {
     }
 
     // Atualiza os dados de uma campanha pertencente a ONG do usuario logado
+    @Override
     @PutMapping("/{id}")
     public ResponseEntity<CampanhaResponse> atualizar(
             @AuthenticationPrincipal CustomUserDetails userDetails,
@@ -82,6 +88,7 @@ public class CampanhaController {
     }
 
     // Altera o status (ativa/inativa) de uma campanha
+    @Override
     @PatchMapping("/{id}/status")
     public ResponseEntity<CampanhaResponse> alterarStatus(
             @AuthenticationPrincipal CustomUserDetails userDetails,
@@ -92,6 +99,7 @@ public class CampanhaController {
     }
 
     // Exclui uma campanha da ONG do usuario logado
+    @Override
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> excluir(
             @AuthenticationPrincipal CustomUserDetails userDetails,

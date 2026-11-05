@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.petajuda.controllers.docs.UsuarioControllerDoc;
 import com.petajuda.dtos.request.AtualizarEmailUsuarioRequest;
 import com.petajuda.dtos.request.AtualizarPerfilUsuarioRequest;
 import com.petajuda.dtos.request.AtualizarSenhaUsuarioRequest;
@@ -28,7 +29,7 @@ import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/v1/usuarios")
-public class UsuarioController {
+public class UsuarioController implements UsuarioControllerDoc {
 
     // Dependencias da classe
     private final UsuarioService usuarioService;
@@ -39,6 +40,7 @@ public class UsuarioController {
     }
 
     // Retorna o perfil do usuario logado
+    @Override
     @GetMapping("/me")
     public ResponseEntity<UsuarioInfoResponse> me(@AuthenticationPrincipal CustomUserDetails userDetails) {
         UsuarioInfoResponse usuario = usuarioService.buscarPorId(userDetails.getId());
@@ -46,6 +48,7 @@ public class UsuarioController {
     }
 
     // Atualiza os dados basicos do perfil do proprio usuario logado
+    @Override
     @PutMapping("/me")
     public ResponseEntity<UsuarioInfoResponse> atualizarPerfil(
             @AuthenticationPrincipal CustomUserDetails userDetails,
@@ -55,6 +58,7 @@ public class UsuarioController {
     }
 
     // Altera a senha do usuario logado
+    @Override
     @PatchMapping("/me/senha")
     public ResponseEntity<Void> atualizarSenha(
             @AuthenticationPrincipal CustomUserDetails userDetails,
@@ -64,6 +68,7 @@ public class UsuarioController {
     }
 
     // Altera o email do usuario logado e gera um novo token JWT
+    @Override
     @PatchMapping("/me/email")
     public ResponseEntity<UsuarioAutenticacaoInfoResponse> atualizarEmail(
             @AuthenticationPrincipal CustomUserDetails userDetails,
@@ -73,6 +78,7 @@ public class UsuarioController {
     }
 
     // Endpoint restrito a Administradores para listagem geral de usuarios
+    @Override
     @GetMapping
     public ResponseEntity<Page<UsuarioInfoResponse>> buscarTodos(
             @RequestParam(required = false) Boolean ativo,
@@ -82,6 +88,7 @@ public class UsuarioController {
     }
 
     // Endpoint restrito a Administradores para busca individual por ID
+    @Override
     @GetMapping("/{id}")
     public ResponseEntity<UsuarioInfoResponse> buscarPorId(@PathVariable UUID id) {
         UsuarioInfoResponse usuario = usuarioService.buscarPorId(id);
@@ -89,6 +96,7 @@ public class UsuarioController {
     }
 
     // Endpoint restrito a Administradores para desativar um usuário
+    @Override
     @PatchMapping("/{id}/desativar")
     public ResponseEntity<Void> desativar(@PathVariable UUID id) {
         usuarioService.desativar(id);
@@ -96,6 +104,7 @@ public class UsuarioController {
     }
 
     // Endpoint restrito a Administradores para reativar um usuário
+    @Override
     @PatchMapping("/{id}/reativar")
     public ResponseEntity<Void> reativar(@PathVariable UUID id) {
         usuarioService.reativar(id);

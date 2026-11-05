@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
+import com.petajuda.controllers.docs.AnimalControllerDoc;
 import com.petajuda.dtos.request.AnimalRequest;
 import com.petajuda.dtos.response.AnimalResponse;
 import com.petajuda.security.details.CustomUserDetails;
@@ -25,7 +26,7 @@ import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/v1/animais")
-public class AnimalController {
+public class AnimalController implements AnimalControllerDoc {
 
     // Dependencias da classe
     private final AnimalService animalService;
@@ -36,6 +37,7 @@ public class AnimalController {
     }
 
     // Cadastra um novo animal vinculado ao usuario logado
+    @Override
     @PostMapping
     public ResponseEntity<AnimalResponse> salvar(
             @AuthenticationPrincipal CustomUserDetails userDetails,
@@ -49,6 +51,7 @@ public class AnimalController {
     }
 
     // Busca um animal especifico pelo ID
+    @Override
     @GetMapping("/{id}")
     public ResponseEntity<AnimalResponse> buscarPorId(@PathVariable UUID id) {
         AnimalResponse response = animalService.buscarPorId(id);
@@ -57,6 +60,7 @@ public class AnimalController {
 
     // Retorna todos os animais pertencentes ao usuario logado
     @GetMapping("/meus-animais")
+    @Override
     public ResponseEntity<List<AnimalResponse>> buscarMeusAnimais(
             @AuthenticationPrincipal CustomUserDetails userDetails) {
         List<AnimalResponse> animais = animalService.buscarAnimaisPorUsuarioId(userDetails.getId());
@@ -65,6 +69,7 @@ public class AnimalController {
 
     // Busca os animais de um usuario específico por ID
     @GetMapping("/usuario/{usuarioId}")
+    @Override
     public ResponseEntity<List<AnimalResponse>> buscarAnimaisPorUsuarioId(@PathVariable UUID usuarioId) {
         List<AnimalResponse> animais = animalService.buscarAnimaisPorUsuarioId(usuarioId);
         return ResponseEntity.ok(animais);
@@ -72,6 +77,7 @@ public class AnimalController {
 
     // Atualiza os dados de um animal do proprio usuario logado
     @PutMapping("/{id}")
+    @Override
     public ResponseEntity<AnimalResponse> atualizar(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @PathVariable UUID id,
@@ -81,6 +87,7 @@ public class AnimalController {
     }
 
     // Remove o registro de um animal pertencente ao usuario logado
+    @Override
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> excluir(
             @AuthenticationPrincipal CustomUserDetails userDetails,

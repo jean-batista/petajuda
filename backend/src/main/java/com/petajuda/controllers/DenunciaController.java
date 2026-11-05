@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
+import com.petajuda.controllers.docs.DenunciaControllerDoc;
 import com.petajuda.dtos.request.DenunciaRequest;
 import com.petajuda.dtos.response.DenunciaResponse;
 import com.petajuda.enums.StatusDenuncia;
@@ -25,7 +26,7 @@ import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/v1/denuncias")
-public class DenunciaController {
+public class DenunciaController implements DenunciaControllerDoc {
 
     // Dependencias da classe
     private final DenunciaService denunciaService;
@@ -36,6 +37,7 @@ public class DenunciaController {
     }
 
     // Envio de denuncia anonima
+    @Override
     @PostMapping
     public ResponseEntity<DenunciaResponse> salvar(@Valid @RequestBody DenunciaRequest request) {
         DenunciaResponse response = denunciaService.salvar(request);
@@ -47,6 +49,7 @@ public class DenunciaController {
     }
 
     // Busca uma denuncia por ID
+    @Override
     @GetMapping("/{id}")
     public ResponseEntity<DenunciaResponse> buscarPorId(@PathVariable UUID id) {
         DenunciaResponse response = denunciaService.buscarPorId(id);
@@ -54,6 +57,7 @@ public class DenunciaController {
     }
 
     // Lista todas as denuncias para o painel de triagem
+    @Override
     @GetMapping
     public ResponseEntity<List<DenunciaResponse>> buscarTodas() {
         List<DenunciaResponse> denuncias = denunciaService.buscarTodas();
@@ -61,6 +65,7 @@ public class DenunciaController {
     }
 
     // Altera o status da denuncia
+    @Override
     @PatchMapping("/{id}/status")
     public ResponseEntity<DenunciaResponse> alterarStatus(
             @PathVariable UUID id,
@@ -70,6 +75,7 @@ public class DenunciaController {
     }
 
     // Exclui uma denuncia
+    @Override
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> excluir(@PathVariable UUID id) {
         denunciaService.excluir(id);

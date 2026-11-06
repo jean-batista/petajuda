@@ -11,6 +11,7 @@ import com.petajuda.dtos.response.OngResponse;
 import com.petajuda.exceptions.RecursoNaoEncontradoException;
 import com.petajuda.exceptions.UsuarioNaoAutorizadoException;
 import com.petajuda.exceptions.RegraDeNegocioException;
+import com.petajuda.mappers.EnderecoMapper;
 import com.petajuda.mappers.OngMapper;
 import com.petajuda.model.Ong;
 import com.petajuda.model.Usuario;
@@ -24,12 +25,14 @@ public class OngService {
     private final OngRepository repository;
     private final UsuarioRepository usuarioRepository;
     private final OngMapper mapper;
+    private final EnderecoMapper enderecoMapper;
 
     // Injecao de dependencias via construtor
-    public OngService(OngRepository repository, UsuarioRepository usuarioRepository, OngMapper mapper) {
+    public OngService(OngRepository repository, UsuarioRepository usuarioRepository, OngMapper mapper, EnderecoMapper enderecoMapper) {
         this.repository = repository;
         this.usuarioRepository = usuarioRepository;
         this.mapper = mapper;
+        this.enderecoMapper = enderecoMapper;
     }
 
     // Cadastra uma Ong
@@ -111,7 +114,7 @@ public class OngService {
         if (dto.cnpj() != null) entidade.setCnpj(dto.cnpj());
         if (dto.chavePix() != null) entidade.setChavePix(dto.chavePix());
         if (dto.descricao() != null) entidade.setDescricao(dto.descricao());
-        if (dto.endereco() != null) entidade.setEndereco(dto.endereco());
+        if (dto.endereco() != null) entidade.setEndereco(enderecoMapper.paraEntidade(dto.endereco()));
     }
 
 }

@@ -3,8 +3,8 @@ package com.petajuda.dtos.response;
 import java.util.List;
 import java.util.UUID;
 
+import com.petajuda.dtos.EnderecoDto;
 import com.petajuda.model.Campanha;
-import com.petajuda.model.Endereco;
 
 public record OngResponse(
     UUID id,
@@ -14,7 +14,7 @@ public record OngResponse(
     String chavePix,
     String descricao,
     List<Campanha> campanhas,
-    Endereco endereco,
+    EnderecoDto endereco,
 
     UUID usuarioId
 ) {}

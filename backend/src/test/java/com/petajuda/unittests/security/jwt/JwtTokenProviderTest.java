@@ -64,7 +64,7 @@ class JwtTokenProviderTest {
         assertThat(response).isNotNull();
         assertThat(response.id()).isEqualTo(id);
         assertThat(response.nomeCompleto()).isEqualTo(nomeCompleto);
-        assertThat(response.usuario()).isEqualTo(email);
+        assertThat(response.email()).isEqualTo(email);
         assertThat(response.perfil()).isEqualTo(perfil);
         assertThat(response.token()).isNotBlank();
 
@@ -114,7 +114,7 @@ class JwtTokenProviderTest {
 
         assertThat(renovado).isNotNull();
         assertThat(renovado.id()).isEqualTo(id);
-        assertThat(renovado.usuario()).isEqualTo("ana@usuario.com");
+        assertThat(renovado.email()).isEqualTo("ana@usuario.com");
         assertThat(renovado.token()).isNotBlank();
     }
 

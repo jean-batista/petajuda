@@ -3,6 +3,7 @@ package com.petajuda.exceptions.handler;
 import java.util.Date;
 import java.util.stream.Collectors;
 
+import com.petajuda.exceptions.*;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
@@ -15,13 +16,6 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
-import com.petajuda.exceptions.EmailInvalidoException;
-import com.petajuda.exceptions.EmailJaExistenteException;
-import com.petajuda.exceptions.RecursoNaoEncontradoException;
-import com.petajuda.exceptions.SenhaInvalidaException;
-import com.petajuda.exceptions.TokenInvalidoException;
-import com.petajuda.exceptions.UsuarioInativoException;
-import com.petajuda.exceptions.UsuarioNaoAutorizadoException;
 import com.petajuda.exceptions.response.ExceptionResponse;
 
 @ControllerAdvice
@@ -98,6 +92,15 @@ public class CustomizedResponseEntityExceptionHandler extends ResponseEntityExce
             ex.getMessage(),
             request.getDescription(false));
         return new ResponseEntity<>(exceptionResponse, HttpStatus.CONFLICT);
+    }
+
+    @ExceptionHandler(AnimalNaoEcontradoException.class)
+    public final ResponseEntity<ExceptionResponse> handleAnimalNaoEcontradoExceptionExceptions(Exception ex, WebRequest request) {
+        ExceptionResponse exceptionResponse = new ExceptionResponse(
+            new Date(),
+            ex.getMessage(),
+            request.getDescription(false));
+        return new ResponseEntity<>(exceptionResponse, HttpStatus.NOT_FOUND);
     }
 
     @Override

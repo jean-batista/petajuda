@@ -7,7 +7,7 @@ import com.petajuda.enums.PerfilUsuario;
 public record UsuarioAutenticacaoInfoResponse(
     UUID id,
     String nomeCompleto,
-    String usuario,
+    String email,
     PerfilUsuario perfil,
     String token
 ) {}

@@ -25,7 +25,6 @@ public interface UsuarioMapper {
     @Mapping(target = "tipoPerfil", ignore = true)
     @Mapping(target = "animais", ignore = true)
     @Mapping(target = "publicacoes", ignore = true)
-    @Mapping(target = "senha", ignore = true)
     Usuario paraEntidade(UsuarioInfoRequest usuarioInfoRequest);
 
     // Converte uma entidade Usuario em um Dto UsuarioInfoResponse

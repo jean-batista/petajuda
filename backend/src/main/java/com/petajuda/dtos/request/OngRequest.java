@@ -7,6 +7,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
+import org.hibernate.validator.constraints.br.CNPJ;
 
 public record OngRequest(
 
@@ -19,7 +20,7 @@ String nome,
 String razaoSocial,
 
 @NotBlank(message = "O CNPJ é obrigatório.")
-@Pattern(regexp = "\\d{14}|\\d{2}\\.\\d{3}\\.\\d{3}/\\d{4}-\\d{2}", message = "CNPJ inválido.")
+@CNPJ
 String cnpj,
 
 @Size(max = 100, message = "A chave Pix deve ter no máximo 100 caracteres.")

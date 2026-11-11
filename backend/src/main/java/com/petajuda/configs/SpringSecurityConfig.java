@@ -112,6 +112,7 @@ public class SpringSecurityConfig {
                                 "/api/v1/autenticacao/refresh"
                         ).permitAll()
 
+
                         // 3. Leituras Publicas (Feed, Detalhes de Pet, Perfil de ONGs, Campanhas)
                         .requestMatchers(HttpMethod.GET, "/api/v1/publicacoes/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/animais/{id}").permitAll()
@@ -121,13 +122,17 @@ public class SpringSecurityConfig {
                         // 4. Envio de Denuncia Anonima (Qualquer cidadao pode enviar)
                         .requestMatchers(HttpMethod.POST, "/api/v1/denuncias").permitAll()
 
-                        // 5. Rotas Restritas a Administradores (ADMIN)
+                        // 5. Perfil do proprio usuario logado (Qualquer usuario autenticado)
+                        .requestMatchers(HttpMethod.GET, "/api/v1/usuarios/me").authenticated()
+                        .requestMatchers(HttpMethod.PUT, "/api/v1/usuarios/me").authenticated()
+
+                        // 6. Rotas Restritas a Administradores (ADMIN)
                         .requestMatchers(HttpMethod.GET, "/api/v1/denuncias/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.PATCH, "/api/v1/denuncias/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/api/v1/denuncias/**").hasRole("ADMIN")
                         .requestMatchers("/api/v1/usuarios", "/api/v1/usuarios/{id}", "/api/v1/usuarios/{id}/desativar", "/api/v1/usuarios/{id}/reativar").hasRole("ADMIN")
 
-                        // 6. Qualquer outra requisicao exige autenticacao (Token JWT Valido)
+                        // 7. Qualquer outra requisicao exige autenticacao (Token JWT Valido)
                         .anyRequest().authenticated()
                 )
                 .build();

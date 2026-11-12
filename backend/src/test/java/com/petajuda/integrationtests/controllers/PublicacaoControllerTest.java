@@ -1,5 +1,6 @@
 package com.petajuda.integrationtests.controllers;
 
+import java.time.LocalDate;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -105,8 +106,9 @@ public class PublicacaoControllerTest extends AbstractIntegrationTest {
         String senha = "senhaSegura123";
 
         // 1. Cadastra o usuário dono do post
+        EnderecoDto enderecoUsuario = new EnderecoDto("SC", "Tubarão", "Centro", "Rua Capitão Alexandre de Sá", "Casa 10");
         UsuarioInfoRequest usuarioRequest = new UsuarioInfoRequest(
-                "Fernanda", "Lima", telefone, email, senha
+                "Fernanda", "Lima", telefone, LocalDate.of(1994, 3, 12), email, senha, enderecoUsuario
         );
 
         given().port(port)

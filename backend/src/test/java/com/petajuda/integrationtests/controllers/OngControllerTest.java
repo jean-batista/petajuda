@@ -1,5 +1,6 @@
 package com.petajuda.integrationtests.controllers;
 
+import java.time.LocalDate;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -74,8 +75,9 @@ public class OngControllerTest extends AbstractIntegrationTest {
         String senha = "senhaForte123";
 
         // 1. Cadastra o usuário dono da ONG
+        EnderecoDto enderecoUsuario = new EnderecoDto("SC", "Tubarão", "Centro", "Rua XV de Novembro", "Apto 101");
         UsuarioInfoRequest usuarioRequest = new UsuarioInfoRequest(
-                "Helena", "Souza", telefone, email, senha
+                "Helena", "Souza", telefone, LocalDate.of(1995, 5, 15), email, senha, enderecoUsuario
         );
 
         given().port(port)

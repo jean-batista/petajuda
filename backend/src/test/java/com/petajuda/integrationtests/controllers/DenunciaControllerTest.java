@@ -23,6 +23,7 @@ import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
+import java.time.LocalDate;
 import java.util.UUID;
 
 import static io.restassured.RestAssured.given;
@@ -90,8 +91,9 @@ public class DenunciaControllerTest extends AbstractIntegrationTest {
         String senha = "senhaAdmin123";
 
         // 1. Cadastra um usuário normal
+        EnderecoDto enderecoAdmin = new EnderecoDto("SC", "Tubarão", "Centro", "Rua Lauro Müller", "Sala 1");
         UsuarioInfoRequest usuarioRequest = new UsuarioInfoRequest(
-                "Admin", "Sistema", telefone, email, senha
+                "Admin", "Sistema", telefone, LocalDate.of(1990, 1, 1), email, senha, enderecoAdmin
         );
 
         given().port(port)

@@ -1,6 +1,7 @@
 package com.petajuda.integrationtests.controllers;
 
 import com.petajuda.configs.TestConfigs;
+import com.petajuda.dtos.EnderecoDto;
 import com.petajuda.dtos.request.AnimalRequest;
 import com.petajuda.dtos.request.UsuarioCredenciaisRequest;
 import com.petajuda.dtos.request.UsuarioInfoRequest;
@@ -23,6 +24,7 @@ import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
+import java.time.LocalDate;
 import java.util.UUID;
 
 import static io.restassured.RestAssured.given;
@@ -87,8 +89,9 @@ public class AnimalControllerTest extends AbstractIntegrationTest {
         String telefone = "489" + sufixoUnico;
         String senha = "senhaSegura123";
 
+        EnderecoDto enderecoUsuario = new EnderecoDto("SC", "Tubarão", "Centro", "Rua Lauro Müller", "Apto 202");
         UsuarioInfoRequest usuarioRequest = new UsuarioInfoRequest(
-                "Carlos", "Medeiros", telefone, email, senha
+                "Carlos", "Medeiros", telefone, LocalDate.of(1992, 8, 20), email, senha, enderecoUsuario
         );
 
         // Cadastra o usuário chamando a API real (sem a spec do Animal)

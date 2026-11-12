@@ -1,5 +1,6 @@
 package com.petajuda.model;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -11,6 +12,7 @@ import com.petajuda.enums.PerfilUsuario;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
+import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -24,8 +26,8 @@ import jakarta.persistence.Table;
 @Entity
 @Table(name = "tabela_usuario")
 public class Usuario {
-    
-    // Identificador unicado de cada usuario
+
+    // Identificador unico de cada usuario
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
@@ -46,6 +48,10 @@ public class Usuario {
     @Column(name = "telefone", nullable = false, length = 50, unique = true)
     private String telefone;
 
+    // Data de nascimento do usuario
+    @Column(name = "nascimento", nullable = false)
+    private LocalDate nascimento;
+
     // Senha do usuario
     @Column(name = "senha", nullable = false, length = 150)
     private String senha;
@@ -64,6 +70,10 @@ public class Usuario {
     @Column(name = "perfil_usuario", nullable = false, length = 50)
     private PerfilUsuario tipoPerfil;
 
+    // Endereco do usuario
+    @Embedded
+    private Endereco endereco;
+
     // Ong associada ao usuario (caso nao houver, esse campo sera null)
     @OneToOne(mappedBy = "usuario", cascade = CascadeType.ALL, orphanRemoval = true)
     private Ong ong;
@@ -81,17 +91,20 @@ public class Usuario {
     }
 
     // Construtor com argumentos
-    public Usuario(UUID id, String nome, String sobrenome, String email, String telefone, String senha, Boolean ativo,
-            LocalDateTime dataCriacao, PerfilUsuario tipoPerfil, Ong ong, List<Animal> animais, List<Publicacao> publicacoes) {
+    public Usuario(UUID id, String nome, String sobrenome, String email, String telefone, LocalDate nascimento,
+                   String senha, Boolean ativo, LocalDateTime dataCriacao, PerfilUsuario tipoPerfil, Endereco endereco,
+                   Ong ong, List<Animal> animais, List<Publicacao> publicacoes) {
         this.id = id;
         this.nome = nome;
         this.sobrenome = sobrenome;
         this.email = email;
         this.telefone = telefone;
+        this.nascimento = nascimento;
         this.senha = senha;
         this.ativo = ativo;
         this.dataCriacao = dataCriacao;
         this.tipoPerfil = tipoPerfil;
+        this.endereco = endereco;
         this.ong = ong;
         this.animais = animais;
         this.publicacoes = publicacoes;
@@ -119,6 +132,10 @@ public class Usuario {
         return telefone;
     }
 
+    public LocalDate getNascimento() {
+        return nascimento;
+    }
+
     public String getSenha() {
         return senha;
     }
@@ -134,6 +151,11 @@ public class Usuario {
     public PerfilUsuario getTipoPerfil() {
         return tipoPerfil;
     }
+
+    public Endereco getEndereco() {
+        return endereco;
+    }
+
 
     public Ong getOng() {
         return ong;
@@ -169,6 +191,10 @@ public class Usuario {
         this.telefone = telefone;
     }
 
+    public void setNascimento(LocalDate nascimento) {
+        this.nascimento = nascimento;
+    }
+
     public void setSenha(String senha) {
         this.senha = senha;
     }
@@ -187,6 +213,10 @@ public class Usuario {
 
     public void setTipoPerfil(PerfilUsuario tipoPerfil) {
         this.tipoPerfil = tipoPerfil;
+    }
+
+    public void setEndereco(Endereco endereco) {
+        this.endereco = endereco;
     }
 
     public void setAnimais(List<Animal> animais) {

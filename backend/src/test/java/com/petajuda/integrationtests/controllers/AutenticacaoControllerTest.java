@@ -1,5 +1,6 @@
 package com.petajuda.integrationtests.controllers;
 
+import java.time.LocalDate;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -16,6 +17,7 @@ import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import com.petajuda.configs.TestConfigs;
+import com.petajuda.dtos.EnderecoDto;
 import com.petajuda.dtos.request.UsuarioCredenciaisRequest;
 import com.petajuda.dtos.request.UsuarioInfoRequest;
 import com.petajuda.integrationtests.AbstractIntegrationTest;
@@ -70,10 +72,11 @@ public class AutenticacaoControllerTest extends AbstractIntegrationTest {
         String sufixoUnico = UUID.randomUUID().toString().substring(0, 8);
         String email = "novo.usuario." + sufixoUnico + "@email.com";
         String telefone = "489" + sufixoUnico;
+        EnderecoDto endereco = new EnderecoDto("SC", "Tubarão", "Centro", "Rua XV de Novembro", "Apto 101");
 
-        // Lembre-se da ordem do construtor: nome, sobrenome, email, telefone, senha
+        // Ordem do record: nome, sobrenome, telefone, nascimento, email, senha, endereco
         UsuarioInfoRequest request = new UsuarioInfoRequest(
-                "Lucas", "Pereira", telefone, email, "senhaForte123"
+                "Lucas", "Pereira", telefone, LocalDate.of(1995, 5, 15), email, "senhaForte123", endereco
         );
 
         Response response = given().spec(specification)
@@ -91,8 +94,31 @@ public class AutenticacaoControllerTest extends AbstractIntegrationTest {
         assertThat(id).isNotNull();
         assertThat(response.jsonPath().getString("email")).isEqualTo(email);
         assertThat(response.jsonPath().getString("nomeCompleto")).isEqualTo("Lucas Pereira");
+        assertThat(response.jsonPath().getString("nascimento")).isEqualTo("1995-05-15");
+        assertThat(response.jsonPath().getString("endereco.cidade")).isEqualTo("Tubarão");
         assertThat(response.jsonPath().getBoolean("ativo")).isTrue();
         assertThat(response.header("Location")).contains("/api/v1/usuarios/" + id);
+    }
+
+    @Test
+    @DisplayName("Cadastro: Deve retornar 400 Bad Request ao tentar cadastrar usuário menor de 18 anos")
+    void deveRetornarErroAoCadastrarUsuarioMenorDeIdade() {
+        String sufixoUnico = UUID.randomUUID().toString().substring(0, 8);
+        String email = "menor.idade." + sufixoUnico + "@email.com";
+        String telefone = "489" + sufixoUnico;
+        EnderecoDto endereco = new EnderecoDto("SC", "Tubarão", "Centro", "Rua XV de Novembro", "Casa 1");
+
+        UsuarioInfoRequest request = new UsuarioInfoRequest(
+                "Pedro", "Santos", telefone, LocalDate.now().minusYears(16), email, "senhaForte123", endereco
+        );
+
+        given().spec(specification)
+                .contentType(TestConfigs.CONTENT_TYPE_JSON)
+                .body(request)
+                .when()
+                .post("/cadastro")
+                .then()
+                .statusCode(400);
     }
 
     @Test
@@ -102,10 +128,11 @@ public class AutenticacaoControllerTest extends AbstractIntegrationTest {
         String email = "login.teste." + sufixoUnico + "@email.com";
         String telefone = "479" + sufixoUnico;
         String senha = "minhasenha123";
+        EnderecoDto endereco = new EnderecoDto("SC", "Laguna", "Magalhães", "Rua das Flores", "Casa 2");
 
         // 1. Cadastra o usuário primeiro
         UsuarioInfoRequest cadastroRequest = new UsuarioInfoRequest(
-                "Maria", "Silva", telefone, email, senha
+                "Maria", "Silva", telefone, LocalDate.of(1998, 10, 20), email, senha, endereco
         );
 
         given().spec(specification)
@@ -159,10 +186,11 @@ public class AutenticacaoControllerTest extends AbstractIntegrationTest {
         String email = "refresh.teste." + sufixoUnico + "@email.com";
         String telefone = "469" + sufixoUnico;
         String senha = "senhaForte123";
+        EnderecoDto endereco = new EnderecoDto("SC", "Capivari de Baixo", "Centro", "Av. Nilton Augusto Sachetti", "Apto 302");
 
         // 1. Cadastra o usuário
         UsuarioInfoRequest cadastroRequest = new UsuarioInfoRequest(
-                "Ana", "Souza", telefone, email, senha
+                "Ana", "Souza", telefone, LocalDate.of(1993, 7, 12), email, senha, endereco
         );
 
         given().spec(specification)

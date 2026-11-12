@@ -20,9 +20,10 @@ import com.petajuda.enums.PerfilUsuario;
 import com.petajuda.exceptions.EmailInvalidoException;
 import com.petajuda.exceptions.EmailJaExistenteException;
 import com.petajuda.exceptions.RecursoNaoEncontradoException;
+import com.petajuda.exceptions.RegraDeNegocioException;
 import com.petajuda.exceptions.SenhaInvalidaException;
 import com.petajuda.exceptions.UsuarioInativoException;
-import com.petajuda.exceptions.RegraDeNegocioException;
+import com.petajuda.mappers.EnderecoMapper;
 import com.petajuda.mappers.UsuarioMapper;
 import com.petajuda.model.Usuario;
 import com.petajuda.repositories.UsuarioRepository;
@@ -34,16 +35,19 @@ public class UsuarioService {
     // Dependencias da classe
     private final UsuarioRepository repositorio;
     private final UsuarioMapper mapper;
+    private final EnderecoMapper enderecoMapper;
     private final JwtTokenProvider jwtTokenProvider;
     private final PasswordEncoder passwordEncoder;
 
     // Injecao das dependencias via construtor
-    public UsuarioService(UsuarioRepository repositorio, 
-                          UsuarioMapper mapper, 
-                          JwtTokenProvider jwtTokenProvider, 
+    public UsuarioService(UsuarioRepository repositorio,
+                          UsuarioMapper mapper,
+                          EnderecoMapper enderecoMapper,
+                          JwtTokenProvider jwtTokenProvider,
                           PasswordEncoder passwordEncoder) {
         this.repositorio = repositorio;
         this.mapper = mapper;
+        this.enderecoMapper = enderecoMapper;
         this.jwtTokenProvider = jwtTokenProvider;
         this.passwordEncoder = passwordEncoder;
     }
@@ -66,10 +70,10 @@ public class UsuarioService {
         entidade.setSenha(passwordEncoder.encode(entidade.getSenha())); // Criptografa a senha do Usuario e salva como hash
         entidade.setAtivo(true); // Define o Usuario como ativo
         entidade.setDataCriacao(LocalDateTime.now()); // Define a data de cadastro do Usuario
-        
+
         // Define o perfil do Usuario
         entidade.setTipoPerfil(PerfilUsuario.USUARIO_COMUM);
-        
+
         return mapper.paraUsuarioInfo(repositorio.save(entidade));
     }
 
@@ -77,7 +81,7 @@ public class UsuarioService {
     @Transactional(readOnly = true)
     public UsuarioInfoResponse buscarPorId(UUID id) {
         Usuario entidade = repositorio.findById(id).orElseThrow(
-            () -> new RecursoNaoEncontradoException("Usuário não encontrado com o id " + id)
+                () -> new RecursoNaoEncontradoException("Usuário não encontrado com o id " + id)
         );
         return mapper.paraUsuarioInfo(entidade);
     }
@@ -86,7 +90,7 @@ public class UsuarioService {
     @Transactional(readOnly = true)
     public UsuarioInfoResponse buscarPorEmail(String email) {
         Usuario entity = repositorio.findByEmail(email).orElseThrow(
-            () -> new RecursoNaoEncontradoException("Usuário não encontrado com o email " + email)
+                () -> new RecursoNaoEncontradoException("Usuário não encontrado com o email " + email)
         );
         return mapper.paraUsuarioInfo(entity);
     }
@@ -111,9 +115,9 @@ public class UsuarioService {
         Usuario entidade = buscarUsuarioAtivoPorId(id);
 
         // Se o telefone foi alterado, valida se já não pertence a outro usuário
-        if (atualizarPerfilUsuarioRequest.telefone() != null && 
-            !atualizarPerfilUsuarioRequest.telefone().equals(entidade.getTelefone())) {
-            
+        if (atualizarPerfilUsuarioRequest.telefone() != null &&
+                !atualizarPerfilUsuarioRequest.telefone().equals(entidade.getTelefone())) {
+
             if (repositorio.existsByTelefone(atualizarPerfilUsuarioRequest.telefone())) {
                 throw new RegraDeNegocioException("Este número de telefone já está em uso por outro usuário.");
             }
@@ -128,7 +132,7 @@ public class UsuarioService {
     public void atualizarSenha(UUID id, AtualizarSenhaUsuarioRequest atualizarSenhaUsuarioRequest) {
         Usuario entidade = buscarUsuarioAtivoPorId(id);
 
-        // Capara os hashes entre a senha passada e a senha salva no banco, verificando se a senha esta correta
+        // Compara os hashes entre a senha passada e a senha salva no banco, verificando se a senha esta correta
         if (!passwordEncoder.matches(atualizarSenhaUsuarioRequest.senhaAntiga(), entidade.getSenha())) {
             throw new SenhaInvalidaException("A senha atual está incorreta.");
         }
@@ -163,10 +167,10 @@ public class UsuarioService {
         repositorio.save(entidade);
 
         return jwtTokenProvider.createToken(
-            entidade.getId(),
-            entidade.getNome() + " " + entidade.getSobrenome(),
-            entidade.getEmail(),
-            entidade.getTipoPerfil()
+                entidade.getId(),
+                entidade.getNome() + " " + entidade.getSobrenome(),
+                entidade.getEmail(),
+                entidade.getTipoPerfil()
         );
     }
 
@@ -185,7 +189,7 @@ public class UsuarioService {
         entidade.setAtivo(false);
         repositorio.save(entidade);
     }
- 
+
     // Reativa um Usuario
     @Transactional
     public void reativar(UUID id) {
@@ -207,6 +211,8 @@ public class UsuarioService {
         if (dto.nome() != null) entidade.setNome(dto.nome());
         if (dto.sobrenome() != null) entidade.setSobrenome(dto.sobrenome());
         if (dto.telefone() != null) entidade.setTelefone(dto.telefone());
+        if (dto.nascimento() != null) entidade.setNascimento(dto.nascimento());
+        if (dto.endereco() != null) entidade.setEndereco(enderecoMapper.paraEntidade(dto.endereco()));
     }
 
     // Metodo auxiliar para facilitar a busca de um Usuario usando o seu id

@@ -1,11 +1,11 @@
 package com.petajuda.integrationtests.controllers;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -78,8 +78,9 @@ public class CampanhaControllerTest extends AbstractIntegrationTest {
         String senha = "senhaSegura123";
 
         // 1. Cadastra o usuário dono da ONG
+        EnderecoDto enderecoUsuario = new EnderecoDto("SC", "Florianópolis", "Centro", "Rua Lauro Müller", "Apto 301");
         UsuarioInfoRequest usuarioRequest = new UsuarioInfoRequest(
-                "Marcos", "Antonio", telefone, email, senha
+                "Marcos", "Antonio", telefone, LocalDate.of(1990, 4, 10), email, senha, enderecoUsuario
         );
 
         given().port(port)

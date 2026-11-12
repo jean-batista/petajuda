@@ -14,7 +14,7 @@ import com.petajuda.model.Usuario;
     ===================================================================================
 */
 
-@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
+@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE, uses = {EnderecoMapper.class})
 public interface UsuarioMapper {
     
     // Converte um Dto UsuarioInfoRequest em uma entidade Usuario

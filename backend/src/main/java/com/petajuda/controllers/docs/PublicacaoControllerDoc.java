@@ -16,6 +16,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.web.multipart.MultipartFile;
 
 @Tag(name = "Publicações", description = "Endpoints para gestão do Feed de animais perdidos, encontrados e para adoção")
 public interface PublicacaoControllerDoc {
@@ -27,7 +28,7 @@ public interface PublicacaoControllerDoc {
         @ApiResponse(responseCode = "400", description = "Dados da publicação inválidos"),
         @ApiResponse(responseCode = "401", description = "Não autorizado")
     })
-    ResponseEntity<PublicacaoResponse> salvar(CustomUserDetails userDetails, PublicacaoRequest request);
+    ResponseEntity<PublicacaoResponse> salvar(CustomUserDetails userDetails, PublicacaoRequest request, MultipartFile file);
 
     @Operation(summary = "Buscar publicação por ID", description = "Exibe os detalhes de uma publicação específica do feed.")
     @ApiResponses(value = {
@@ -49,7 +50,7 @@ public interface PublicacaoControllerDoc {
         @ApiResponse(responseCode = "403", description = "Sem permissão para editar esta publicação"),
         @ApiResponse(responseCode = "404", description = "Publicação não encontrada")
     })
-    ResponseEntity<PublicacaoResponse> atualizar(CustomUserDetails userDetails, UUID id, PublicacaoRequest request);
+    ResponseEntity<PublicacaoResponse> atualizar(CustomUserDetails userDetails, UUID id, PublicacaoRequest request, MultipartFile file);
 
     @Operation(summary = "Alterar status da publicação", description = "Altera o status da publicação (ex: de ATIVO para RESOLVIDO).")
     @SecurityRequirement(name = "bearerAuth")

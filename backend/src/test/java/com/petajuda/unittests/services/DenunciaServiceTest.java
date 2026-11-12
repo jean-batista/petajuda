@@ -18,6 +18,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.mock.web.MockMultipartFile;
 
 import com.petajuda.dtos.EnderecoDto;
 import com.petajuda.dtos.request.DenunciaRequest;
@@ -29,6 +30,7 @@ import com.petajuda.mappers.EnderecoMapper;
 import com.petajuda.model.Denuncia;
 import com.petajuda.model.Endereco;
 import com.petajuda.repositories.DenunciaRepository;
+import com.petajuda.services.CloudinaryService;
 import com.petajuda.services.DenunciaService;
 
 @ExtendWith(MockitoExtension.class)
@@ -43,17 +45,28 @@ class DenunciaServiceTest {
     @Mock
     private EnderecoMapper enderecoMapper;
 
+    @Mock
+    private CloudinaryService cloudinaryService;
+
     @InjectMocks
     private DenunciaService denunciaService;
 
     private Denuncia denuncia;
     private DenunciaRequest denunciaRequest;
     private DenunciaResponse denunciaResponse;
+    private MockMultipartFile fotoPadrao;
     private UUID denunciaId;
 
     @BeforeEach
     void setUp() {
         denunciaId = UUID.randomUUID();
+
+        fotoPadrao = new MockMultipartFile(
+                "foto",
+                "evidencia.jpg",
+                "image/jpeg",
+                "imagem_evidencia_simulada".getBytes()
+        );
 
         Endereco endereco = new Endereco("SC", "Laguna", "Centro", "Rua X", "123");
         EnderecoDto enderecoDto = new EnderecoDto("SC", "Laguna", "Centro", "Rua X", "123");
@@ -62,18 +75,19 @@ class DenunciaServiceTest {
         denuncia.setId(denunciaId);
         denuncia.setTitulo("Maus-tratos a cachorro");
         denuncia.setDescricao("Cachorro acorrentado");
-        denuncia.setFotoUrl("foto.jpg");
+        denuncia.setFotoUrl("https://res.cloudinary.com/demo/image/upload/v1/petajuda/denuncias/foto.jpg");
         denuncia.setData(LocalDateTime.now());
         denuncia.setStatus(StatusDenuncia.PENDENTE);
         denuncia.setEndereco(endereco);
 
         denunciaRequest = new DenunciaRequest(
-            "Maus-tratos a cachorro", "Cachorro acorrentado", "foto.jpg", enderecoDto
+                "Maus-tratos a cachorro", "Cachorro acorrentado", enderecoDto
         );
 
         denunciaResponse = new DenunciaResponse(
-            denunciaId, "Maus-tratos a cachorro", "Cachorro acorrentado", 
-            "foto.jpg", denuncia.getData(), StatusDenuncia.PENDENTE, enderecoDto
+                denunciaId, "Maus-tratos a cachorro", "Cachorro acorrentado",
+                "https://res.cloudinary.com/demo/image/upload/v1/petajuda/denuncias/foto.jpg",
+                denuncia.getData(), StatusDenuncia.PENDENTE, enderecoDto
         );
     }
 
@@ -84,16 +98,19 @@ class DenunciaServiceTest {
     @Test
     @DisplayName("Salvar: Deve registrar uma nova denúncia com status PENDENTE por padrão")
     void deveSalvarDenunciaComSucesso() {
+        when(cloudinaryService.enviarFoto(fotoPadrao, "denuncias"))
+                .thenReturn("https://res.cloudinary.com/demo/image/upload/v1/petajuda/denuncias/foto.jpg");
         when(mapper.paraEntidade(denunciaRequest)).thenReturn(denuncia);
         when(repository.save(denuncia)).thenReturn(denuncia);
         when(mapper.paraDto(denuncia)).thenReturn(denunciaResponse);
 
-        DenunciaResponse response = denunciaService.salvar(denunciaRequest);
+        DenunciaResponse response = denunciaService.salvar(denunciaRequest, fotoPadrao);
 
         assertThat(response).isNotNull();
         assertThat(response.status()).isEqualTo(StatusDenuncia.PENDENTE);
         assertThat(denuncia.getStatus()).isEqualTo(StatusDenuncia.PENDENTE);
-        
+
+        verify(cloudinaryService).enviarFoto(fotoPadrao, "denuncias");
         verify(repository).save(denuncia);
     }
 
@@ -119,8 +136,8 @@ class DenunciaServiceTest {
         when(repository.findById(denunciaId)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> denunciaService.buscarPorId(denunciaId))
-            .isInstanceOf(RecursoNaoEncontradoException.class)
-            .hasMessageContaining("Denúncia não encontrada");
+                .isInstanceOf(RecursoNaoEncontradoException.class)
+                .hasMessageContaining("Denúncia não encontrada");
     }
 
     @Test
@@ -158,8 +175,8 @@ class DenunciaServiceTest {
         when(repository.findById(denunciaId)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> denunciaService.alterarStatus(denunciaId, StatusDenuncia.EM_ANALISE))
-            .isInstanceOf(RecursoNaoEncontradoException.class)
-            .hasMessageContaining("Denúncia não encontrada");
+                .isInstanceOf(RecursoNaoEncontradoException.class)
+                .hasMessageContaining("Denúncia não encontrada");
 
         verify(repository, never()).save(any());
     }
@@ -171,11 +188,13 @@ class DenunciaServiceTest {
     @Test
     @DisplayName("Excluir: Deve excluir a denúncia com sucesso")
     void deveExcluirDenunciaComSucesso() {
+        String fotoUrl = denuncia.getFotoUrl();
         when(repository.findById(denunciaId)).thenReturn(Optional.of(denuncia));
 
         denunciaService.excluir(denunciaId);
 
         verify(repository).delete(denuncia);
+        verify(cloudinaryService).excluirFoto(fotoUrl);
     }
 
     @Test
@@ -184,8 +203,8 @@ class DenunciaServiceTest {
         when(repository.findById(denunciaId)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> denunciaService.excluir(denunciaId))
-            .isInstanceOf(RecursoNaoEncontradoException.class)
-            .hasMessageContaining("Denúncia não encontrada");
+                .isInstanceOf(RecursoNaoEncontradoException.class)
+                .hasMessageContaining("Denúncia não encontrada");
 
         verify(repository, never()).delete(any());
     }

@@ -1,8 +1,11 @@
 package com.petajuda.services;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
+import com.petajuda.enums.TipoPublicacao;
+import com.petajuda.exceptions.RegraDeNegocioException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,6 +22,7 @@ import com.petajuda.model.Usuario;
 import com.petajuda.repositories.AnimalRepository;
 import com.petajuda.repositories.PublicacaoRepository;
 import com.petajuda.repositories.UsuarioRepository;
+import org.springframework.web.multipart.MultipartFile;
 
 @Service
 public class PublicacaoService {
@@ -30,43 +34,72 @@ public class PublicacaoService {
     private final PublicacaoMapper mapper;
     private final EnderecoMapper enderecoMapper;
 
+    // Dependencias externas
+    private final CloudinaryService cloudinaryService;
+
     // Injeção das dependências via construtor
     public PublicacaoService(PublicacaoRepository repository, 
                              UsuarioRepository usuarioRepository, 
                              AnimalRepository animalRepository, 
                              PublicacaoMapper mapper,
-                             EnderecoMapper enderecoMapper) {
+                             EnderecoMapper enderecoMapper,
+                             CloudinaryService cloudinaryService) {
         this.repository = repository;
         this.usuarioRepository = usuarioRepository;
         this.animalRepository = animalRepository;
         this.mapper = mapper;
         this.enderecoMapper = enderecoMapper;
+        this.cloudinaryService = cloudinaryService;
     }
 
     // Salva uma publicacao
     @Transactional
-    public PublicacaoResponse salvar(UUID usuarioLogadoId, PublicacaoRequest request) {
+    public PublicacaoResponse salvar(UUID usuarioLogadoId, PublicacaoRequest request, MultipartFile foto) {
+
+        Animal animal = null;
+        String urlFoto = null;
 
         // Verifica se o Usuario existe
         Usuario usuario = usuarioRepository.findById(usuarioLogadoId).orElseThrow(
-            () -> new RecursoNaoEncontradoException("Usuário não encontrado.")
+                () -> new RecursoNaoEncontradoException("Usuário não encontrado.")
         );
 
-        // Verifica se o Animal existe
-        Animal animal = animalRepository.findById(request.animalId()).orElseThrow(
-            () -> new RecursoNaoEncontradoException("Animal não encontrado.")
-        );
+        // Validação de Negócio 1: PERDIDO e ADOCAO exigem animal vinculado
+        if ((request.tipo() == TipoPublicacao.PERDIDO || request.tipo() == TipoPublicacao.ADOCAO) && request.animalId() == null) {
+            throw new RegraDeNegocioException("Para publicações de animais perdidos ou para adoção, é obrigatório vincular um animal cadastrado.");
+        }
 
-        // Verifica se o Animal esta cadastrado no perfil utilizado para criar a publicacao
-        if (!animal.getUsuario().getId().equals(usuarioLogadoId)) {
-            throw new UsuarioNaoAutorizadoException("Você só pode criar publicações para animais cadastrados no seu perfil.");
+        // Validação de Negócio 2: Se não há animal vinculado (post de ENCONTRADO), a foto enviada é obrigatória
+        if (request.animalId() == null && (foto == null || foto.isEmpty())) {
+            throw new RegraDeNegocioException("Para relatar um animal encontrado na rua, é obrigatório anexar uma foto.");
+        }
+
+        // 1. Só consulta o banco se o ID do animal NÃO for nulo!
+        if (request.animalId() != null) {
+            animal = animalRepository.findById(request.animalId()).orElseThrow(
+                    () -> new RecursoNaoEncontradoException("Animal não encontrado.")
+            );
+
+            // Verifica se o Animal esta cadastrado no perfil utilizado para criar a publicacao
+            if (!animal.getUsuario().getId().equals(usuarioLogadoId)) {
+                throw new UsuarioNaoAutorizadoException("Você só pode criar publicações para animais cadastrados no seu perfil.");
+            }
+        }
+
+        // 2. Lógica inteligente de imagem:
+        // Prioriza a foto enviada no Multipart. Se não enviou, tenta herdar a foto do animal.
+        if (foto != null && !foto.isEmpty()) {
+            urlFoto = cloudinaryService.enviarFoto(foto, "publicacoes");
+        } else if (animal != null) {
+            urlFoto = animal.getFotoUrl();
         }
 
         Publicacao entidade = mapper.paraEntidade(request);
         entidade.setUsuario(usuario);
-        entidade.setAnimal(animal);
+        entidade.setAnimal(animal); // Pode ser null em caso de animal encontrado na rua
         entidade.setStatus(StatusPublicacao.ATIVO);
-        
+        entidade.setFotoUrl(urlFoto);
+
         return mapper.paraDto(repository.save(entidade));
     }
 
@@ -89,7 +122,8 @@ public class PublicacaoService {
 
     // Atualiza uma Publicacao
     @Transactional
-    public PublicacaoResponse atualizar(UUID usuarioLogadoId, UUID publicacaoId, PublicacaoRequest request) {
+    public PublicacaoResponse atualizar(UUID usuarioLogadoId, UUID publicacaoId, PublicacaoRequest request,
+                                        MultipartFile novaFoto) {
 
         // Verifica se a Publicacao existe
         Publicacao entidade = repository.findById(publicacaoId).orElseThrow(
@@ -97,6 +131,18 @@ public class PublicacaoService {
         );
 
         validarPosse(entidade, usuarioLogadoId);
+
+        // Se o usuário enviou uma nova foto:
+        // 1. Sobe a nova imagem
+        // 2. Apaga a foto antiga do Cloudinary para não deixar lixo na nuvem
+        if (novaFoto != null && !novaFoto.isEmpty()) {
+            String urlAntiga = entidade.getFotoUrl();
+            String novaUrl = cloudinaryService.enviarFoto(novaFoto, "animais");
+            entidade.setFotoUrl(novaUrl);
+
+            cloudinaryService.excluirFoto(urlAntiga);
+        }
+
         atualizarDados(entidade, request);
 
         return mapper.paraDto(repository.save(entidade));
@@ -127,7 +173,11 @@ public class PublicacaoService {
         );
 
         validarPosse(entidade, usuarioLogadoId);
+
+        String fotoUrl = entidade.getFotoUrl();
+
         repository.delete(entidade);
+        cloudinaryService.excluirFoto(fotoUrl);
     }
 
     // Metodo auxiliar para validar a posse de uma Publicacao

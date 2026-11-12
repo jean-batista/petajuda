@@ -31,9 +31,6 @@ public record AnimalRequest(
     @NotBlank(message = "A descrição do animal é obrigatória.")
     String descricao,
 
-    @NotBlank(message = "A URL da foto é obrigatória.")
-    String fotoUrl,
-
     @NotNull(message = "A idade aproximada é obrigatória.")
     IdadeAnimal idade,
 

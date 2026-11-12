@@ -33,6 +33,8 @@
 		<springdoc.version>3.0.2</springdoc.version>
 		<testcontainers.version>2.0.1</testcontainers.version>
 		<rest-assured.version>6.3.0</rest-assured.version>
+		<cloudinary.version>2.0.0</cloudinary.version>
+		<dotenv-java.version>2.2.4</dotenv-java.version>
 	</properties>
 	<dependencies>
 
@@ -149,6 +151,25 @@
 			<artifactId>rest-assured</artifactId>
 			<version>${rest-assured.version}</version>
 			<scope>test</scope>
+		</dependency>
+
+		<!-- Cloudinary -->
+		<dependency>
+			<groupId>com.cloudinary</groupId>
+			<artifactId>cloudinary-http5</artifactId>
+			<version>${cloudinary.version}</version>
+		</dependency>
+
+		<dependency>
+			<groupId>com.cloudinary</groupId>
+			<artifactId>cloudinary-taglib</artifactId>
+			<version>${cloudinary.version}</version>
+		</dependency>
+
+		<dependency>
+			<groupId>io.github.cdimascio</groupId>
+			<artifactId>dotenv-java</artifactId>
+			<version>${dotenv-java.version}</version>
 		</dependency>
 
 	</dependencies>

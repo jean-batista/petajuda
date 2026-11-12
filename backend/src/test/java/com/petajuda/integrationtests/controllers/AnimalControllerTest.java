@@ -1,14 +1,5 @@
 package com.petajuda.integrationtests.controllers;
 
-import java.util.UUID;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.web.server.LocalServerPort;
-
 import com.petajuda.configs.TestConfigs;
 import com.petajuda.dtos.request.AnimalRequest;
 import com.petajuda.dtos.request.UsuarioCredenciaisRequest;
@@ -17,30 +8,46 @@ import com.petajuda.enums.EspecieAnimal;
 import com.petajuda.enums.IdadeAnimal;
 import com.petajuda.enums.PorteAnimal;
 import com.petajuda.integrationtests.AbstractIntegrationTest;
-
-import static io.restassured.RestAssured.given;
+import com.petajuda.services.CloudinaryService;
 import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.filter.log.LogDetail;
 import io.restassured.filter.log.RequestLoggingFilter;
 import io.restassured.filter.log.ResponseLoggingFilter;
 import io.restassured.response.Response;
 import io.restassured.specification.RequestSpecification;
-
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.web.server.LocalServerPort;
+import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+
+import java.util.UUID;
+
+import static io.restassured.RestAssured.given;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class AnimalControllerTest extends AbstractIntegrationTest {
+
+    private static final String FOTO_URL_MOCK = "https://res.cloudinary.com/demo/image/upload/v1/petajuda/animais/rex.jpg";
 
     @LocalServerPort
     private int port;
 
     @Autowired
     private JdbcTemplate jdbcTemplate;
+
+    // Mocka o serviço externo do Cloudinary no contexto do Spring Boot para evitar chamadas reais de rede
+    // (Nota: Caso utilize Spring Boot anterior à versão 3.4, substitua @MockitoBean por @MockBean)
+    @MockitoBean
+    private CloudinaryService cloudinaryService;
 
     private String bearerToken;
     private AnimalRequest animalRequestPadrao;
@@ -63,6 +70,9 @@ public class AnimalControllerTest extends AbstractIntegrationTest {
 
     @BeforeEach
     void setUp() {
+        // Configura o comportamento padrão do mock do Cloudinary antes de cada teste
+        when(cloudinaryService.enviarFoto(any(), eq("animais"))).thenReturn(FOTO_URL_MOCK);
+
         // Inicializa a specification para ser reaproveitada nos testes do AnimalController
         specification = new RequestSpecBuilder()
                 .setBasePath(TestConfigs.ANIMAL_CONTROLLER_BASE_PATH)
@@ -115,18 +125,18 @@ public class AnimalControllerTest extends AbstractIntegrationTest {
         this.animalRequestPadrao = new AnimalRequest(
                 "Rex", "Macho", "Caramelo", true, true,
                 "Cachorro muito dócil encontrado na rua",
-                "http://foto.com/rex.jpg",
                 IdadeAnimal.ADULTO, PorteAnimal.MEDIO, EspecieAnimal.CACHORRO
         );
     }
 
     @Test
-    @DisplayName("AnimalControllerIT: Deve cadastrar um animal com sucesso retornando 201 Created")
+    @DisplayName("AnimalControllerTest: Deve cadastrar um animal com foto via multipart/form-data retornando 201 Created")
     void deveCadastrarAnimalComSucesso() {
         Response response = given().spec(specification)
                 .header(TestConfigs.HEADER_PARAM_AUTHORIZATION, bearerToken)
-                .contentType(TestConfigs.CONTENT_TYPE_JSON)
-                .body(animalRequestPadrao)
+                .contentType(MediaType.MULTIPART_FORM_DATA_VALUE)
+                .multiPart("dados", animalRequestPadrao, MediaType.APPLICATION_JSON_VALUE)
+                .multiPart("foto", "rex.jpg", "conteudo_imagem_simulada".getBytes(), MediaType.IMAGE_JPEG_VALUE)
                 .when()
                 .post()
                 .then()
@@ -136,21 +146,23 @@ public class AnimalControllerTest extends AbstractIntegrationTest {
 
         String id = response.jsonPath().getString("id");
         String nome = response.jsonPath().getString("nome");
+        String fotoUrl = response.jsonPath().getString("fotoUrl");
 
         assertThat(id).isNotNull();
         assertThat(nome).isEqualTo("Rex");
+        assertThat(fotoUrl).isEqualTo(FOTO_URL_MOCK);
         assertThat(response.header("Location")).contains(TestConfigs.ANIMAL_CONTROLLER_BASE_PATH + "/" + id);
     }
 
     @Test
-    @DisplayName("AnimalControllerIT: Deve buscar um animal específico por ID retornando 200 OK")
+    @DisplayName("AnimalControllerTest: Deve buscar um animal específico por ID retornando 200 OK")
     void deveBuscarAnimalPorIdComSucesso() {
         // Primeiro cadastra o animal
         String animalId = cadastrarAnimalAuxiliarEObterId();
 
         // Depois busca ele
         Response response = given().spec(specification)
-                .header(TestConfigs.HEADER_PARAM_AUTHORIZATION, bearerToken) // Rota pública não exigiria token, mas passamos por segurança
+                .header(TestConfigs.HEADER_PARAM_AUTHORIZATION, bearerToken)
                 .contentType(TestConfigs.CONTENT_TYPE_JSON)
                 .pathParam("id", animalId)
                 .when()
@@ -162,37 +174,39 @@ public class AnimalControllerTest extends AbstractIntegrationTest {
 
         assertThat(response.jsonPath().getString("id")).isEqualTo(animalId);
         assertThat(response.jsonPath().getString("nome")).isEqualTo("Rex");
+        assertThat(response.jsonPath().getString("fotoUrl")).isEqualTo(FOTO_URL_MOCK);
     }
 
     @Test
-    @DisplayName("AnimalControllerIT: Deve retornar 403/401 ao tentar cadastrar um animal sem token JWT")
+    @DisplayName("AnimalControllerTest: Deve retornar 403/401 ao tentar cadastrar um animal sem token JWT")
     void deveRetornarErroAoCadastrarSemAutenticacao() {
         given().spec(specification)
-                .contentType(TestConfigs.CONTENT_TYPE_JSON)
-                .body(animalRequestPadrao) // Sem header de Authorization
+                .contentType(MediaType.MULTIPART_FORM_DATA_VALUE)
+                .multiPart("dados", animalRequestPadrao, MediaType.APPLICATION_JSON_VALUE)
+                .multiPart("foto", "rex.jpg", "conteudo_imagem_simulada".getBytes(), MediaType.IMAGE_JPEG_VALUE)
                 .when()
                 .post()
                 .then()
-                // Dependendo de como o Spring Security trata na sua versão, pode ser 401 (Unauthorized) ou 403 (Forbidden)
                 .statusCode(org.hamcrest.Matchers.anyOf(org.hamcrest.Matchers.is(401), org.hamcrest.Matchers.is(403)));
     }
 
     @Test
-    @DisplayName("AnimalControllerIT: Deve atualizar os dados do animal retornando 200 OK")
+    @DisplayName("AnimalControllerTest: Deve atualizar os dados do animal mantendo a foto atual quando nova foto não for enviada")
     void deveAtualizarAnimalComSucesso() {
         String animalId = cadastrarAnimalAuxiliarEObterId();
 
         AnimalRequest atualizarRequest = new AnimalRequest(
                 "Rex Atualizado", "Macho", "Preto", true, true,
-                "Descrição atualizada", "http://foto.com/rex2.jpg",
+                "Descrição atualizada",
                 IdadeAnimal.IDOSO, PorteAnimal.GRANDE, EspecieAnimal.CACHORRO
         );
 
+        // Envia apenas a parte "dados" (testando o required = false da parte "foto")
         Response response = given().spec(specification)
                 .header(TestConfigs.HEADER_PARAM_AUTHORIZATION, bearerToken)
-                .contentType(TestConfigs.CONTENT_TYPE_JSON)
+                .contentType(MediaType.MULTIPART_FORM_DATA_VALUE)
+                .multiPart("dados", atualizarRequest, MediaType.APPLICATION_JSON_VALUE)
                 .pathParam("id", animalId)
-                .body(atualizarRequest)
                 .when()
                 .put("/{id}")
                 .then()
@@ -202,10 +216,11 @@ public class AnimalControllerTest extends AbstractIntegrationTest {
 
         assertThat(response.jsonPath().getString("nome")).isEqualTo("Rex Atualizado");
         assertThat(response.jsonPath().getString("idade")).isEqualTo(IdadeAnimal.IDOSO.name());
+        assertThat(response.jsonPath().getString("fotoUrl")).isEqualTo(FOTO_URL_MOCK);
     }
 
     @Test
-    @DisplayName("AnimalControllerIT: Deve excluir um animal com sucesso retornando 204 No Content")
+    @DisplayName("AnimalControllerTest: Deve excluir um animal com sucesso retornando 204 No Content e limpar foto na nuvem")
     void deveExcluirAnimalComSucesso() {
         String animalId = cadastrarAnimalAuxiliarEObterId();
 
@@ -217,7 +232,10 @@ public class AnimalControllerTest extends AbstractIntegrationTest {
                 .then()
                 .statusCode(204);
 
-        // Verifica se realmente foi excluído (tentando buscar pelo id)
+        // Garante que o serviço acionou a exclusão da imagem órfã no Cloudinary
+        verify(cloudinaryService).excluirFoto(FOTO_URL_MOCK);
+
+        // Verifica se realmente foi excluído no banco (tentando buscar pelo id)
         given().spec(specification)
                 .header(TestConfigs.HEADER_PARAM_AUTHORIZATION, bearerToken)
                 .pathParam("id", animalId)
@@ -227,12 +245,13 @@ public class AnimalControllerTest extends AbstractIntegrationTest {
                 .statusCode(404);
     }
 
-    // Método auxiliar para criar um animal e retornar o ID formatado como String
+    // Método auxiliar para criar um animal via multipart/form-data e retornar o ID formatado como String
     private String cadastrarAnimalAuxiliarEObterId() {
         return given().spec(specification)
                 .header(TestConfigs.HEADER_PARAM_AUTHORIZATION, bearerToken)
-                .contentType(TestConfigs.CONTENT_TYPE_JSON)
-                .body(animalRequestPadrao)
+                .contentType(MediaType.MULTIPART_FORM_DATA_VALUE)
+                .multiPart("dados", animalRequestPadrao, MediaType.APPLICATION_JSON_VALUE)
+                .multiPart("foto", "rex.jpg", "conteudo_imagem_simulada".getBytes(), MediaType.IMAGE_JPEG_VALUE)
                 .when()
                 .post()
                 .then()

@@ -20,6 +20,10 @@ flyway:
   enabled: true
   locations: classpath:db/migration
   baseline-on-migrate: true
+cloudinary:
+  cloud-name: "test-cloud-name"
+  api-key: "123456789012345"
+  api-secret: "test-api-secret"
 logging:
   level:
     root: WARN

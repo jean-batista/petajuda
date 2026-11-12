@@ -1,12 +1,5 @@
 package com.petajuda.unittests.services;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -19,12 +12,15 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.petajuda.dtos.EnderecoDto;
 import com.petajuda.dtos.request.PublicacaoRequest;
 import com.petajuda.dtos.response.PublicacaoResponse;
 import com.petajuda.enums.StatusPublicacao;
 import com.petajuda.enums.TipoPublicacao;
+import com.petajuda.exceptions.RegraDeNegocioException;
 import com.petajuda.exceptions.UsuarioNaoAutorizadoException;
 import com.petajuda.mappers.EnderecoMapper;
 import com.petajuda.mappers.PublicacaoMapper;
@@ -35,7 +31,13 @@ import com.petajuda.model.Usuario;
 import com.petajuda.repositories.AnimalRepository;
 import com.petajuda.repositories.PublicacaoRepository;
 import com.petajuda.repositories.UsuarioRepository;
+import com.petajuda.services.CloudinaryService;
 import com.petajuda.services.PublicacaoService;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class PublicacaoServiceTest {
@@ -55,6 +57,9 @@ class PublicacaoServiceTest {
     @Mock
     private EnderecoMapper enderecoMapper;
 
+    @Mock
+    private CloudinaryService cloudinaryService;
+
     @InjectMocks
     private PublicacaoService publicacaoService;
 
@@ -63,6 +68,7 @@ class PublicacaoServiceTest {
     private Publicacao publicacao;
     private PublicacaoRequest publicacaoRequest;
     private PublicacaoResponse publicacaoResponse;
+    private MockMultipartFile fotoPadrao;
     private UUID usuarioId;
     private UUID animalId;
     private UUID publicacaoId;
@@ -72,6 +78,14 @@ class PublicacaoServiceTest {
         usuarioId = UUID.randomUUID();
         animalId = UUID.randomUUID();
         publicacaoId = UUID.randomUUID();
+
+        // Instância padrão de arquivo simulado para testes que exigem upload
+        fotoPadrao = new MockMultipartFile(
+                "foto",                  // Nome do campo (@RequestPart)
+                "cachorro.jpg",          // Nome original do arquivo
+                "image/jpeg",            // Content-Type válido
+                "conteudo_fake".getBytes() // Bytes simulados (garante isEmpty() == false)
+        );
 
         Endereco endereco = new Endereco("SC", "Tubarão", "Oficinas", "Rua A", "100");
         EnderecoDto enderecoDto = new EnderecoDto("SC", "Tubarão", "Oficinas", "Rua A", "100");
@@ -97,14 +111,14 @@ class PublicacaoServiceTest {
         publicacao.setEndereco(endereco);
 
         publicacaoRequest = new PublicacaoRequest(
-            "Cachorro Perdido", "Fugiu no bairro Oficinas", TipoPublicacao.PERDIDO, animalId, enderecoDto
+                "Cachorro Perdido", "Fugiu no bairro Oficinas", TipoPublicacao.PERDIDO, animalId, enderecoDto
         );
 
         publicacaoResponse = new PublicacaoResponse(
-            publicacaoId, "Cachorro Perdido", "Fugiu no bairro Oficinas", publicacao.getData(), 
-            StatusPublicacao.ATIVO, TipoPublicacao.PERDIDO, enderecoDto, 
-            usuarioId, "Maria", "48999999999", 
-            animalId, "Thor", "url_foto_thor"
+                publicacaoId, "Cachorro Perdido", "Fugiu no bairro Oficinas", "publicacao_url",
+                publicacao.getData(), StatusPublicacao.ATIVO, TipoPublicacao.PERDIDO, enderecoDto,
+                usuarioId, "Maria", "48999999999",
+                animalId, "Thor", "url_foto_thor"
         );
     }
 
@@ -113,7 +127,7 @@ class PublicacaoServiceTest {
     // =========================================================================
 
     @Test
-    @DisplayName("Salvar: Deve criar publicação se animal existir e pertencer ao usuário logado")
+    @DisplayName("Salvar: Deve criar publicação se animal existir e pertencer ao usuário logado (Herdando foto)")
     void deveSalvarPublicacaoComSucesso() {
         when(usuarioRepository.findById(usuarioId)).thenReturn(Optional.of(usuarioLogado));
         when(animalRepository.findById(animalId)).thenReturn(Optional.of(animal));
@@ -121,7 +135,8 @@ class PublicacaoServiceTest {
         when(repository.save(publicacao)).thenReturn(publicacao);
         when(mapper.paraDto(publicacao)).thenReturn(publicacaoResponse);
 
-        PublicacaoResponse response = publicacaoService.salvar(usuarioId, publicacaoRequest);
+        // Passando null na foto para simular a herança da foto do Animal vinculado
+        PublicacaoResponse response = publicacaoService.salvar(usuarioId, publicacaoRequest, fotoPadrao);
 
         assertThat(response).isNotNull();
         assertThat(response.titulo()).isEqualTo("Cachorro Perdido");
@@ -140,11 +155,69 @@ class PublicacaoServiceTest {
         when(usuarioRepository.findById(usuarioId)).thenReturn(Optional.of(usuarioLogado));
         when(animalRepository.findById(animalId)).thenReturn(Optional.of(animal));
 
-        assertThatThrownBy(() -> publicacaoService.salvar(usuarioId, publicacaoRequest))
-            .isInstanceOf(UsuarioNaoAutorizadoException.class)
-            .hasMessageContaining("só pode criar publicações para animais cadastrados no seu perfil");
+        assertThatThrownBy(() -> publicacaoService.salvar(usuarioId, publicacaoRequest, fotoPadrao))
+                .isInstanceOf(UsuarioNaoAutorizadoException.class)
+                .hasMessageContaining("só pode criar publicações para animais cadastrados no seu perfil");
 
         verify(repository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("Salvar: Deve lançar RegraDeNegocioException se post de PERDIDO ou ADOCAO não tiver animal vinculado")
+    void deveLancarExcecaoAoCriarPostPerdidoSemAnimal() {
+        PublicacaoRequest requestSemAnimal = new PublicacaoRequest(
+                "Cachorro Perdido", "Fugiu", TipoPublicacao.PERDIDO, null, publicacaoRequest.endereco()
+        );
+
+        when(usuarioRepository.findById(usuarioId)).thenReturn(Optional.of(usuarioLogado));
+
+        assertThatThrownBy(() -> publicacaoService.salvar(usuarioId, requestSemAnimal, null))
+                .isInstanceOf(RegraDeNegocioException.class)
+                .hasMessageContaining("obrigatório vincular um animal cadastrado");
+
+        verify(repository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("Salvar: Deve lançar RegraDeNegocioException se post de ENCONTRADO não tiver animal e não enviar foto")
+    void deveLancarExcecaoAoCriarPostEncontradoSemAnimalESemFoto() {
+        PublicacaoRequest requestEncontrado = new PublicacaoRequest(
+                "Cachorro Encontrado", "Achei na rua", TipoPublicacao.ENCONTRADO, null, publicacaoRequest.endereco()
+        );
+
+        when(usuarioRepository.findById(usuarioId)).thenReturn(Optional.of(usuarioLogado));
+
+        assertThatThrownBy(() -> publicacaoService.salvar(usuarioId, requestEncontrado, null))
+                .isInstanceOf(RegraDeNegocioException.class)
+                .hasMessageContaining("obrigatório anexar uma foto");
+
+        verify(repository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("Salvar: Deve salvar post de ENCONTRADO com sucesso enviando foto própria e sem vínculo de animal")
+    void deveSalvarPostEncontradoComFotoPropria() {
+        PublicacaoRequest requestEncontrado = new PublicacaoRequest(
+                "Cachorro Encontrado", "Achei na rua", TipoPublicacao.ENCONTRADO, null, publicacaoRequest.endereco()
+        );
+
+        MultipartFile fotoMock = mock(MultipartFile.class);
+        when(fotoMock.isEmpty()).thenReturn(false);
+
+        when(usuarioRepository.findById(usuarioId)).thenReturn(Optional.of(usuarioLogado));
+        when(cloudinaryService.enviarFoto(fotoMock, "publicacoes")).thenReturn("url_da_foto_encontrado");
+
+        Publicacao entidadeMock = new Publicacao();
+        when(mapper.paraEntidade(requestEncontrado)).thenReturn(entidadeMock);
+        when(repository.save(entidadeMock)).thenReturn(entidadeMock);
+        when(mapper.paraDto(entidadeMock)).thenReturn(publicacaoResponse);
+
+        PublicacaoResponse response = publicacaoService.salvar(usuarioId, requestEncontrado, fotoMock);
+
+        assertThat(response).isNotNull();
+        assertThat(entidadeMock.getFotoUrl()).isEqualTo("url_da_foto_encontrado");
+        verify(cloudinaryService).enviarFoto(fotoMock, "publicacoes");
+        verify(repository).save(entidadeMock);
     }
 
     // =========================================================================
@@ -185,7 +258,7 @@ class PublicacaoServiceTest {
         when(repository.save(publicacao)).thenReturn(publicacao);
         when(mapper.paraDto(publicacao)).thenReturn(publicacaoResponse);
 
-        PublicacaoResponse response = publicacaoService.atualizar(usuarioId, publicacaoId, publicacaoRequest);
+        PublicacaoResponse response = publicacaoService.atualizar(usuarioId, publicacaoId, publicacaoRequest, null);
 
         assertThat(response).isNotNull();
         verify(repository).save(publicacao);
@@ -198,9 +271,9 @@ class PublicacaoServiceTest {
 
         when(repository.findById(publicacaoId)).thenReturn(Optional.of(publicacao));
 
-        assertThatThrownBy(() -> publicacaoService.atualizar(outroUsuarioId, publicacaoId, publicacaoRequest))
-            .isInstanceOf(UsuarioNaoAutorizadoException.class)
-            .hasMessageContaining("permissão para modificar esta publicação");
+        assertThatThrownBy(() -> publicacaoService.atualizar(outroUsuarioId, publicacaoId, publicacaoRequest, null))
+                .isInstanceOf(UsuarioNaoAutorizadoException.class)
+                .hasMessageContaining("permissão para modificar esta publicação");
 
         verify(repository, never()).save(any());
     }
@@ -244,7 +317,7 @@ class PublicacaoServiceTest {
         when(repository.findById(publicacaoId)).thenReturn(Optional.of(publicacao));
 
         assertThatThrownBy(() -> publicacaoService.excluir(outroUsuarioId, publicacaoId))
-            .isInstanceOf(UsuarioNaoAutorizadoException.class);
+                .isInstanceOf(UsuarioNaoAutorizadoException.class);
 
         verify(repository, never()).delete(any());
     }

@@ -30,7 +30,8 @@ class AnimalMapperTest {
     @Test
     @DisplayName("AnimalMapper: Deve mapear AnimalRequest para Entidade Animal")
     void deveMapearAnimalRequestParaEntidade() {
-        AnimalRequest request = new AnimalRequest("Rex", "Macho", "Caramelo", true, true, "Cão dócil", "http://foto.com/rex.jpg", IdadeAnimal.ADULTO, PorteAnimal.MEDIO, EspecieAnimal.CACHORRO);
+        AnimalRequest request = new AnimalRequest("Rex", "Macho", "Caramelo", true,
+                true, "Cão dócil", IdadeAnimal.ADULTO, PorteAnimal.MEDIO, EspecieAnimal.CACHORRO);
 
         Animal entidade = animalMapper.paraEntidade(request);
 
@@ -43,7 +44,6 @@ class AnimalMapperTest {
         assertThat(entidade.isCastrado()).isEqualTo(request.castrado());
         assertThat(entidade.isVacinado()).isEqualTo(request.vacinado());
         assertThat(entidade.getDescricao()).isEqualTo(request.descricao());
-        assertThat(entidade.getFotoUrl()).isEqualTo(request.fotoUrl());
         assertThat(entidade.getIdade()).isEqualTo(request.idade());
         assertThat(entidade.getPorte()).isEqualTo(request.porte());
         assertThat(entidade.getEspecie()).isEqualTo(request.especie());

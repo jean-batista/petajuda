@@ -5,6 +5,8 @@ security:
     token:
       secret-key: "segredo-super-seguro-para-testes-de-integracao-petajuda"
       expire-length: 3600000
+cors:
+  allowed-origins: "allowed_origin"
 spring:
   datasource:
     driver-class-name: org.postgresql.Driver

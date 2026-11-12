@@ -1,9 +1,7 @@
 package com.petajuda.configs;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
+import com.petajuda.security.jwt.JwtTokenFilter;
+import com.petajuda.security.jwt.JwtTokenProvider;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -18,12 +16,10 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.crypto.password.Pbkdf2PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
-import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
-import com.petajuda.security.jwt.JwtTokenFilter;
-import com.petajuda.security.jwt.JwtTokenProvider;
+import java.util.HashMap;
+import java.util.Map;
 
 @EnableWebSecurity
 @Configuration
@@ -31,10 +27,12 @@ public class SpringSecurityConfig {
 
     // Dependencias da classe
     private final JwtTokenProvider tokenProvider;
+    private final CorsConfigurationSource corsConfigurationSource;
 
     // Injecao das dependencias via construtor
-    public SpringSecurityConfig(JwtTokenProvider tokenProvider) {
+    public SpringSecurityConfig(JwtTokenProvider tokenProvider, CorsConfigurationSource corsConfigurationSource) {
         this.tokenProvider = tokenProvider;
+        this.corsConfigurationSource = corsConfigurationSource;
     }
 
     // Bean responsavel por fazer a criptografia da senha
@@ -59,32 +57,6 @@ public class SpringSecurityConfig {
         return configuration.getAuthenticationManager();
     }
 
-    // Bean responsavel pela configuracao do cors
-    @Bean
-    public CorsConfigurationSource corsConfigurationSource() {
-
-        // Endpoints permitidos no cors
-        List<String> allowedOrigins = List.of(
-            "http://localhost:5173",
-            "http://localhost:5174",
-            "http://localhost:5175",
-            "http://localhost:3000",
-            "http://localhost:3001",
-            "http://localhost:3002"
-        );
-
-        CorsConfiguration configuration = new CorsConfiguration();
-        // Permite as origens do React (Vite / Create React App)
-        configuration.setAllowedOrigins(allowedOrigins);
-        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
-        configuration.setAllowedHeaders(List.of("Authorization", "Content-Type", "Accept"));
-        configuration.setAllowCredentials(true);
-
-        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", configuration);
-        return source;
-    }
-
     // Bean responsavel por fazer as checagens de securanca
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -95,7 +67,7 @@ public class SpringSecurityConfig {
         return http
                 .httpBasic(AbstractHttpConfigurer::disable)
                 .csrf(AbstractHttpConfigurer::disable)
-                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                .cors(cors -> cors.configurationSource(corsConfigurationSource))
                 .addFilterBefore(filter, UsernamePasswordAuthenticationFilter.class)
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))

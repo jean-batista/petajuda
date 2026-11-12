@@ -35,10 +35,10 @@ export default function Navbar() {
             </NavLink>
           ))}
 
-          <button className="ml-2 flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-xl text-sm font-semibold">
+          <Link to="/login" className="ml-2 flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-xl text-sm font-semibold">
             <LogIn className="w-4 h-4" />
             <span className="hidden sm:inline">Entrar</span>
-          </button>
+          </Link>
         </div>
       </nav>
     </header>

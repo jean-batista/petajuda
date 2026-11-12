@@ -9,7 +9,6 @@ import org.springframework.transaction.annotation.Transactional;
 import com.petajuda.dtos.request.AnimalRequest;
 import com.petajuda.dtos.response.AnimalResponse;
 import com.petajuda.exceptions.RecursoNaoEncontradoException;
-import com.petajuda.exceptions.AnimalNaoEcontradoException;
 import com.petajuda.exceptions.UsuarioNaoAutorizadoException;
 import com.petajuda.mappers.AnimalMapper;
 import com.petajuda.model.Animal;
@@ -62,7 +61,7 @@ public class AnimalService {
 
         // Verifica se o Animal existe
         Animal animal = repository.findById(animalId).orElseThrow(
-            () -> new AnimalNaoEcontradoException("Não foi possível encontrar um animal com o id: " + animalId)
+            () -> new RecursoNaoEncontradoException("Não foi possível encontrar um animal com o id: " + animalId)
         );
         return mapper.paraDto(animal);
     }
@@ -87,7 +86,7 @@ public class AnimalService {
 
         // Verifica se o Animal existe
         Animal entidade = repository.findById(animalId).orElseThrow(
-            () -> new AnimalNaoEcontradoException("Não foi possível encontrar um animal com o id: " + animalId)
+            () -> new RecursoNaoEncontradoException("Não foi possível encontrar um animal com o id: " + animalId)
         );
 
         // Verifica se o Usuario possui permissao para editar o cadastro do Animal
@@ -116,7 +115,7 @@ public class AnimalService {
 
         // Verifica se o Animal existe
         Animal entidade = repository.findById(animalId).orElseThrow(
-            () -> new AnimalNaoEcontradoException("Não foi possível encontrar um animal com o id: " + animalId)
+            () -> new RecursoNaoEncontradoException("Não foi possível encontrar um animal com o id: " + animalId)
         );
 
         // Verifica se o Usuario possui permissao para excluir o Animal

@@ -76,6 +76,7 @@ class PublicacaoMapperTest {
                 UUID.randomUUID(),
                 "Cão Perdido",
                 "Fugiu no centro",
+                "foto_url",
                 LocalDateTime.now(),
                 StatusPublicacao.ATIVO,
                 TipoPublicacao.PERDIDO,

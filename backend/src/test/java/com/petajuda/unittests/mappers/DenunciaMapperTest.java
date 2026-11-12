@@ -34,8 +34,9 @@ public class DenunciaMapperTest {
     @Test
     @DisplayName("DenunciaMapper: Deve mapear DenunciaRequest para Entidade Denuncia")
     void deveMapearDenunciaRequestParaEntidade() {
-        EnderecoDto enderecoDto = new EnderecoDto("SC", "Laguna", "Mar Grosso", "Av. Senador Gallotti", "S/N");
-        DenunciaRequest request = new DenunciaRequest("Maus-tratos", "Cão preso sem água", "http://foto.com/evidencia.jpg", enderecoDto);
+        EnderecoDto enderecoDto = new EnderecoDto("SC", "Laguna", "Mar Grosso",
+                "Av. Senador Gallotti", "S/N");
+        DenunciaRequest request = new DenunciaRequest("Maus-tratos", "Cão preso sem água", enderecoDto);
 
         Denuncia entidade = denunciaMapper.paraEntidade(request);
 
@@ -45,7 +46,6 @@ public class DenunciaMapperTest {
         assertThat(entidade.getStatus()).isNull();
         assertThat(entidade.getTitulo()).isEqualTo(request.titulo());
         assertThat(entidade.getDescricao()).isEqualTo(request.descricao());
-        assertThat(entidade.getFotoUrl()).isEqualTo(request.fotoUrl());
         assertThat(entidade.getEndereco()).isNotNull();
         assertThat(entidade.getEndereco().getCidade()).isEqualTo("Laguna");
     }

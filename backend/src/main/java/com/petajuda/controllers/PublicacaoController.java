@@ -38,7 +38,7 @@ public class PublicacaoController implements PublicacaoControllerDoc {
     public ResponseEntity<PublicacaoResponse> salvar(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @RequestPart("dados") @Valid PublicacaoRequest request,
-            @RequestPart("foto") MultipartFile file) {
+            @RequestPart(value = "foto", required = false) MultipartFile file) {
         PublicacaoResponse response = publicacaoService.salvar(userDetails.getId(), request, file);
         URI uri = ServletUriComponentsBuilder.fromCurrentRequest()
                 .path("/{id}")
@@ -70,7 +70,7 @@ public class PublicacaoController implements PublicacaoControllerDoc {
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @PathVariable UUID id,
             @RequestPart("dados") @Valid PublicacaoRequest request,
-            @RequestPart("foto") MultipartFile file) {
+            @RequestPart(value = "foto", required = false) MultipartFile file) {
         PublicacaoResponse response = publicacaoService.atualizar(userDetails.getId(), id, request, file);
         return ResponseEntity.ok(response);
     }

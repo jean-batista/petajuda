@@ -81,7 +81,7 @@ public class AnimalController implements AnimalControllerDoc {
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @PathVariable UUID id,
             @RequestPart("dados") @Valid AnimalRequest request,
-            @RequestPart("foto") MultipartFile foto) {
+            @RequestPart(value = "foto", required = false) MultipartFile foto) {
         AnimalResponse response = animalService.atualizar(userDetails.getId(), id, request, foto);
         return ResponseEntity.ok(response);
     }

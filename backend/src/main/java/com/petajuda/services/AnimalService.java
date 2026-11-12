@@ -16,6 +16,7 @@ import com.petajuda.model.Animal;
 import com.petajuda.model.Usuario;
 import com.petajuda.repositories.AnimalRepository;
 import com.petajuda.repositories.UsuarioRepository;
+import org.springframework.web.multipart.MultipartFile;
 
 @Service 
 public class AnimalService {
@@ -25,23 +26,32 @@ public class AnimalService {
     private final UsuarioRepository usuarioRepository;
     private final AnimalMapper mapper;
 
+    // Dependencias externas
+    private final CloudinaryService cloudinaryService;
+
     // Injecao das dependencias via construtor
-    public AnimalService(AnimalRepository repository, UsuarioRepository usuarioRepository, AnimalMapper mapper) {
+    public AnimalService(AnimalRepository repository, UsuarioRepository usuarioRepository, AnimalMapper mapper,
+                         CloudinaryService cloudinaryService) {
         this.repository = repository;
         this.usuarioRepository = usuarioRepository;
         this.mapper = mapper;
+        this.cloudinaryService = cloudinaryService;
     }
 
     // Cadastra um Animal
     @Transactional
-    public AnimalResponse salvar(UUID usuarioId, AnimalRequest animalDto) {
+    public AnimalResponse salvar(UUID usuarioId, AnimalRequest animalDto, MultipartFile foto) {
 
         // Verifica se o Usuario existe
         Usuario usuario = usuarioRepository.findById(usuarioId)
             .orElseThrow(() -> new RecursoNaoEncontradoException("Usuário inexistente com o id: " + usuarioId));
+
+        // Upload da foto do pet para a pasta 'animais'
+        String urlFoto = cloudinaryService.enviarFoto(foto, "animais");
         
         Animal entidade = mapper.paraEntidade(animalDto);
         entidade.setUsuario(usuario);
+        entidade.setFotoUrl(urlFoto);
         
         return mapper.paraDto(repository.save(entidade));
     }

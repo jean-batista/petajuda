@@ -15,6 +15,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.web.multipart.MultipartFile;
 
 @Tag(name = "Animais", description = "Endpoints para cadastro e gestão de fichas de animais")
 public interface AnimalControllerDoc {
@@ -26,7 +27,7 @@ public interface AnimalControllerDoc {
         @ApiResponse(responseCode = "400", description = "Dados do animal inválidos"),
         @ApiResponse(responseCode = "401", description = "Não autorizado")
     })
-    ResponseEntity<AnimalResponse> salvar(CustomUserDetails userDetails, AnimalRequest request);
+    ResponseEntity<AnimalResponse> salvar(CustomUserDetails userDetails, AnimalRequest request, MultipartFile foto);
 
     @Operation(summary = "Buscar animal por ID", description = "Retorna os detalhes de um animal cadastrado pelo seu UUID.")
     @ApiResponses(value = {

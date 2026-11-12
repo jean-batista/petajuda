@@ -22,7 +22,6 @@ public record PublicacaoRequest(
     @NotNull(message = "O tipo da publicação é obrigatório.")
     TipoPublicacao tipo,
 
-    @NotNull(message = "O ID do animal é obrigatório.")
     UUID animalId,
 
     @NotNull(message = "O endereço é obrigatório.")

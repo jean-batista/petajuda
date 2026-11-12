@@ -15,6 +15,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.web.multipart.MultipartFile;
 
 @Tag(name = "Denúncias", description = "Endpoints para registro anônimo e triagem administrativa de denúncias")
 public interface DenunciaControllerDoc {
@@ -24,7 +25,7 @@ public interface DenunciaControllerDoc {
         @ApiResponse(responseCode = "201", description = "Denúncia registrada com sucesso"),
         @ApiResponse(responseCode = "400", description = "Dados da denúncia inválidos")
     })
-    ResponseEntity<DenunciaResponse> salvar(DenunciaRequest request);
+    ResponseEntity<DenunciaResponse> salvar(DenunciaRequest request, MultipartFile file);
 
     @Operation(summary = "Buscar denúncia por ID (ADMIN)", description = "Exibe os detalhes de uma ocorrência para triagem. Restrito a administradores.")
     @SecurityRequirement(name = "bearerAuth")

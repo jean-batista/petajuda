@@ -18,7 +18,7 @@ import com.petajuda.repositories.AnimalRepository;
 import com.petajuda.repositories.UsuarioRepository;
 import org.springframework.web.multipart.MultipartFile;
 
-@Service 
+@Service
 public class AnimalService {
 
     // Dependencias da classe
@@ -48,11 +48,11 @@ public class AnimalService {
 
         // Upload da foto do pet para a pasta 'animais'
         String urlFoto = cloudinaryService.enviarFoto(foto, "animais");
-        
+
         Animal entidade = mapper.paraEntidade(animalDto);
         entidade.setUsuario(usuario);
         entidade.setFotoUrl(urlFoto);
-        
+
         return mapper.paraDto(repository.save(entidade));
     }
 
@@ -82,7 +82,8 @@ public class AnimalService {
 
     // Atualiza os dados de um Animal
     @Transactional
-    public AnimalResponse atualizar(UUID usuarioLogadoId, UUID animalId, AnimalRequest animalRequest) {
+    public AnimalResponse atualizar(UUID usuarioLogadoId, UUID animalId, AnimalRequest animalRequest,
+                                    MultipartFile novaFoto) {
 
         // Verifica se o Animal existe
         Animal entidade = repository.findById(animalId).orElseThrow(
@@ -92,6 +93,17 @@ public class AnimalService {
         // Verifica se o Usuario possui permissao para editar o cadastro do Animal
         if (!entidade.getUsuario().getId().equals(usuarioLogadoId)) {
             throw new UsuarioNaoAutorizadoException("Você não tem permissão para editar o cadastro deste animal.");
+        }
+
+        // Se o usuário enviou uma nova foto:
+        // 1. Sobe a nova imagem
+        // 2. Apaga a foto antiga do Cloudinary para não deixar lixo na nuvem
+        if (novaFoto != null && !novaFoto.isEmpty()) {
+            String urlAntiga = entidade.getFotoUrl();
+            String novaUrl = cloudinaryService.enviarFoto(novaFoto, "animais");
+            entidade.setFotoUrl(novaUrl);
+
+            cloudinaryService.excluirFoto(urlAntiga);
         }
 
         atualizarDadosEntidade(entidade, animalRequest);
@@ -112,7 +124,11 @@ public class AnimalService {
             throw new UsuarioNaoAutorizadoException("Você não tem permissão para excluir este animal.");
         }
 
+        String fotoUrl = entidade.getFotoUrl();
+
+        // Remove do banco primeiro; se der sucesso, limpa a imagem na nuvem
         repository.delete(entidade);
+        cloudinaryService.excluirFoto(fotoUrl);
     }
 
     // Metodo auxiliar para modificar os dados de um Animal
@@ -123,7 +139,6 @@ public class AnimalService {
         if(dto.castrado() != null) entidade.setCastrado(dto.castrado());
         if(dto.vacinado() != null) entidade.setVacinado(dto.vacinado());
         if(dto.descricao() != null) entidade.setDescricao(dto.descricao());
-        if(dto.fotoUrl() != null) entidade.setFotoUrl(dto.fotoUrl());
         if(dto.idade() != null) entidade.setIdade(dto.idade());
         if(dto.porte() != null) entidade.setPorte(dto.porte());
         if(dto.especie() != null) entidade.setEspecie(dto.especie());

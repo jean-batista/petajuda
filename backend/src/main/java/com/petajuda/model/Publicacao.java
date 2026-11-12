@@ -38,6 +38,9 @@ public class Publicacao {
     @Column(name = "descricao", nullable = false, columnDefinition = "TEXT")
     private String descricao;
 
+    @Column(name = "foto_url", nullable = false, columnDefinition = "TEXT")
+    private String fotoUrl;
+
     // Data da publicacao
     @CreationTimestamp
     @Column(name = "data", nullable = false)
@@ -60,7 +63,7 @@ public class Publicacao {
     
     // Animal vinculado a publicacao
     @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "animal_id", nullable = false)
+    @JoinColumn(name = "animal_id") // True para caso o post for de um animal encontrado
     private Animal animal;
     
     // Endereco vinculado a publicacao
@@ -72,11 +75,12 @@ public class Publicacao {
     }
 
     // Construtor com argumentos
-    public Publicacao(UUID id, String titulo, String descricao, LocalDateTime data, StatusPublicacao status,
-            TipoPublicacao tipo, Usuario usuario, Animal animal, Endereco endereco) {
+    public Publicacao(UUID id, String titulo, String descricao, String fotoUrl, LocalDateTime data,
+                      StatusPublicacao status, TipoPublicacao tipo, Usuario usuario, Animal animal, Endereco endereco) {
         this.id = id;
         this.titulo = titulo;
         this.descricao = descricao;
+        this.fotoUrl = fotoUrl;
         this.data = data;
         this.status = status;
         this.tipo = tipo;
@@ -97,6 +101,10 @@ public class Publicacao {
 
     public String getDescricao() {
         return descricao;
+    }
+
+    public String getFotoUrl() {
+        return fotoUrl;
     }
 
     public LocalDateTime getData() {
@@ -135,6 +143,10 @@ public class Publicacao {
 
     public void setDescricao(String descricao) {
         this.descricao = descricao;
+    }
+
+    public void setFotoUrl(String fotoUrl) {
+        this.fotoUrl = fotoUrl;
     }
 
     public void setData(LocalDateTime data) {

@@ -58,7 +58,7 @@ public interface AnimalControllerDoc {
         @ApiResponse(responseCode = "403", description = "Sem permissão para alterar este animal"),
         @ApiResponse(responseCode = "404", description = "Animal não encontrado")
     })
-    ResponseEntity<AnimalResponse> atualizar(CustomUserDetails userDetails, UUID id, AnimalRequest request);
+    ResponseEntity<AnimalResponse> atualizar(CustomUserDetails userDetails, UUID id, AnimalRequest request, MultipartFile foto);
 
     @Operation(summary = "Excluir animal", description = "Remove o registro de um animal pertencente ao usuário logado.")
     @SecurityRequirement(name = "bearerAuth")

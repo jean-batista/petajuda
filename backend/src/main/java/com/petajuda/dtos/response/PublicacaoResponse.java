@@ -11,6 +11,7 @@ public record PublicacaoResponse(
     UUID id,
     String titulo,
     String descricao,
+    String fotoUrl,
     LocalDateTime data,
     StatusPublicacao status,
     TipoPublicacao tipo,

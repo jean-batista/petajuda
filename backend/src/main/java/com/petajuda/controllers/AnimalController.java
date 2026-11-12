@@ -75,13 +75,14 @@ public class AnimalController implements AnimalControllerDoc {
     }
 
     // Atualiza os dados de um animal do proprio usuario logado
-    @PutMapping("/{id}")
+    @PutMapping(path = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Override
     public ResponseEntity<AnimalResponse> atualizar(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @PathVariable UUID id,
-            @Valid @RequestBody AnimalRequest request) {
-        AnimalResponse response = animalService.atualizar(userDetails.getId(), id, request);
+            @RequestPart("dados") @Valid AnimalRequest request,
+            @RequestPart("foto") MultipartFile foto) {
+        AnimalResponse response = animalService.atualizar(userDetails.getId(), id, request, foto);
         return ResponseEntity.ok(response);
     }
 

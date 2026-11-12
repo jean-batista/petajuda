@@ -16,9 +16,6 @@ public record DenunciaRequest(
     @NotBlank(message = "A descrição detalhada da ocorrência é obrigatória.")
     String descricao,
 
-    @NotBlank(message = "A URL da foto de evidência é obrigatória.")
-    String fotoUrl,
-
     @NotNull(message = "O endereço da ocorrência é obrigatório.")
     @Valid
     EnderecoDto endereco

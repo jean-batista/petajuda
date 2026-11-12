@@ -5,7 +5,11 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -16,9 +20,9 @@ import com.petajuda.exceptions.RegraDeNegocioException;
 @Service
 public class CloudinaryService {
 
+    private static final Logger logger = LoggerFactory.getLogger(CloudinaryService.class);
     private final Cloudinary cloudinary;
 
-    // Extensões de imagem permitidas na plataforma
     private static final List<String> EXTENSOES_PERMITIDAS = Arrays.asList(
             "image/jpeg", "image/png", "image/webp", "image/jpg"
     );
@@ -28,17 +32,12 @@ public class CloudinaryService {
     }
 
     /**
-     * Envia uma imagem para a nuvem do Cloudinary.
-     *
-     * @param arquivo Arquivo de imagem enviado via MultipartFile
-     * @param pasta Subpasta de destino dentro do Cloudinary (ex: "perfis", "animais", "denuncias")
-     * @return String da URL HTTPS segura gerada pelo Cloudinary
+     * Envia uma imagem para a nuvem do Cloudinary e retorna a URL HTTPS segura.
      */
     public String enviarFoto(MultipartFile arquivo, String pasta) {
         validarArquivo(arquivo);
 
         try {
-            // Gera um ID público único para não sobrescrever arquivos existentes com o mesmo nome
             String publicId = "petajuda/" + pasta + "/" + UUID.randomUUID().toString();
 
             Map<?, ?> resultado = cloudinary.uploader().upload(
@@ -50,7 +49,6 @@ public class CloudinaryService {
                     )
             );
 
-            // Retorna a URL segura (HTTPS) gerada automaticamente pela CDN do Cloudinary
             return resultado.get("secure_url").toString();
 
         } catch (IOException e) {
@@ -59,8 +57,40 @@ public class CloudinaryService {
     }
 
     /**
-     * Valida se o arquivo enviado não é nulo/vazio e se possui extensão de imagem suportada.
+     * Exclui uma imagem da nuvem do Cloudinary a partir da URL salva no banco de dados.
+     * Falhas na remoção externa são apenas logadas para não travar a exclusão principal no banco.
      */
+    public void excluirFoto(String fotoUrl) {
+        if (fotoUrl == null || fotoUrl.isBlank() || !fotoUrl.contains("res.cloudinary.com")) {
+            return; // Ignora se for nula ou se for URL mockada de testes antigos
+        }
+
+        try {
+            String publicId = extrairPublicIdDaUrl(fotoUrl);
+            if (publicId != null) {
+                cloudinary.uploader().destroy(publicId, ObjectUtils.emptyMap());
+                logger.info("Imagem removida do Cloudinary com sucesso. Public ID: {}", publicId);
+            }
+        } catch (Exception e) {
+            logger.warn("Não foi possível excluir a imagem órfã no Cloudinary ({}): {}", fotoUrl, e.getMessage());
+        }
+    }
+
+    /**
+     * Extrai o public_id de uma URL padrão do Cloudinary.
+     * Ex: "https://res.cloudinary.com/cloud/image/upload/v17944/petajuda/animais/abc.jpg" -> "petajuda/animais/abc"
+     */
+    private String extrairPublicIdDaUrl(String url) {
+        // Regex captura tudo que vem após "/upload/(v123456/)?" até antes da extensão (.jpg, .png, etc.)
+        Pattern pattern = Pattern.compile("/upload/(?:v\\d+/)?(.+)\\.[a-zA-Z0-9]+$");
+        Matcher matcher = pattern.matcher(url);
+
+        if (matcher.find()) {
+            return matcher.group(1);
+        }
+        return null;
+    }
+
     private void validarArquivo(MultipartFile arquivo) {
         if (arquivo == null || arquivo.isEmpty()) {
             throw new RegraDeNegocioException("É necessário fornecer um arquivo de imagem válido.");

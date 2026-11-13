@@ -12,3 +12,36 @@ export const CIDADES_AMUREL = [
     'Tubarão', 'Laguna', 'Capivari de Baixo', 'Gravatal', 'Braço do Norte',
     'Imbituba', 'Jaguaruna', 'Orleans', 'Armazém', 'São Ludgero',
 ]
+
+export const SEXO = { MACHO: 'Macho', FEMEA: 'Fêmea' }
+
+export const STATUS_PUBLICACAO = {
+    ATIVO: { label: 'Ativo', classe: 'bg-green-100 text-green-700' },
+    RESOLVIDO: { label: 'Resolvido', classe: 'bg-stone-200 text-stone-600' },
+}
+
+// texto do botão "marcar como..." conforme o tipo da publicação (RF09)
+export const ROTULO_RESOLVIDO = {
+    PERDIDO: 'encontrado',
+    ENCONTRADO: 'devolvido ao tutor',
+    ADOCAO: 'adotado',
+}
+
+export const STATUS_DENUNCIA = {
+    PENDENTE: { label: 'Pendente', classe: 'bg-amber-100 text-amber-700' },
+    EM_ANALISE: { label: 'Em análise', classe: 'bg-sky-100 text-sky-700' },
+    CONCLUIDA: { label: 'Concluída', classe: 'bg-green-100 text-green-700' },
+    REJEITADA: { label: 'Rejeitada', classe: 'bg-stone-200 text-stone-600' },
+}
+
+export const STATUS_ONG = {
+    PENDENTE: { label: 'Pendente', classe: 'bg-amber-100 text-amber-700' },
+    APROVADA: { label: 'Aprovada', classe: 'bg-green-100 text-green-700' },
+    REPROVADA: { label: 'Reprovada', classe: 'bg-red-100 text-red-700' },
+}
+
+export const PERFIL = {
+    USUARIO_COMUM: 'Usuário comum',
+    ONG: 'ONG / Protetor',
+    ADMIN: 'Administrador',
+}

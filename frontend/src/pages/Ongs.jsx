@@ -1,101 +1,187 @@
 import { useEffect, useState } from 'react'
-import { MapPin, Copy, Check, CalendarDays, HeartHandshake } from 'lucide-react'
-import { listarOngs, listarCampanhas } from '../services/ongService'
+import { MapPin, Copy, Check, CalendarDays, HeartHandshake, MessageCircle, PawPrint, Building2 } from 'lucide-react'
+import { listarOngs, listarCampanhas, listarAnimaisDaOng } from '../services/ongService'
 import { CIDADES_AMUREL } from '../data/enums'
+import { copiarTexto, formatarData, formatarCnpj, linkWhatsApp } from '../utils/format'
+import { useToast } from '../components/Toast'
+import Modal from '../components/Modal'
+import PublicacaoCard from '../components/PublicacaoCard'
+import { Carregando, Vazio, inputClasse, botaoPrimario, botaoSecundario } from '../components/ui'
+
+// caixa com a chave Pix e o botão de copiar
+function BoxPix({ chave }) {
+  const toast = useToast()
+  const [copiado, setCopiado] = useState(false)
+
+  async function copiar() {
+    const ok = await copiarTexto(chave)
+    if (!ok) return toast.erro('Não foi possível copiar. Selecione a chave e copie manualmente.')
+    setCopiado(true)
+    toast.sucesso('Chave Pix copiada!')
+    setTimeout(() => setCopiado(false), 2000)
+  }
+
+  return (
+    <div className="flex items-center justify-between gap-3 rounded-xl bg-stone-50 p-3">
+      <div className="min-w-0">
+        <p className="text-xs text-stone-500">Chave Pix para doações</p>
+        <p className="select-all truncate font-mono text-sm">{chave}</p>
+      </div>
+      <button onClick={copiar} className={`${botaoPrimario} shrink-0 !px-3 !py-2`}>
+        {copiado ? <><Check className="h-4 w-4" /> Copiado</> : <><Copy className="h-4 w-4" /> Copiar</>}
+      </button>
+    </div>
+  )
+}
+
+function CardCampanha({ campanha }) {
+  return (
+    <article className="rounded-2xl border border-amber-200 bg-amber-50 p-5">
+      <h3 className="font-semibold">{campanha.titulo}</h3>
+      <p className="mt-1 text-sm text-stone-600">{campanha.descricao}</p>
+      <p className="mt-3 flex flex-wrap items-center gap-x-1 text-sm text-stone-500">
+        <CalendarDays className="h-4 w-4" />
+        {formatarData(campanha.dataInicio)}
+        {campanha.dataFim !== campanha.dataInicio && ` até ${formatarData(campanha.dataFim)}`}
+        {campanha.ongNome && ` · ${campanha.ongNome}`}
+      </p>
+    </article>
+  )
+}
+
+// janela com mais informações da instituição (animais para adoção e campanhas)
+function ModalOng({ ong, onFechar }) {
+  const [animais, setAnimais] = useState(null)
+  const [campanhas, setCampanhas] = useState(null)
+
+  useEffect(() => {
+    let ativo = true
+    listarAnimaisDaOng(ong.id).then((l) => ativo && setAnimais(l))
+    listarCampanhas({ ongId: ong.id }).then((l) => ativo && setCampanhas(l))
+    return () => { ativo = false }
+  }, [ong.id])
+
+  return (
+    <Modal titulo={ong.nome} tamanho="lg" onFechar={onFechar}>
+      <div className="flex flex-col gap-6">
+        <div>
+          <p className="flex items-center gap-1 text-sm text-stone-500">
+            <MapPin className="h-4 w-4" />
+            {[ong.endereco.rua, ong.endereco.bairro].filter(Boolean).join(', ')} · {ong.endereco.cidade}/{ong.endereco.estado}
+          </p>
+          <p className="mt-3 text-stone-700">{ong.descricao}</p>
+          <p className="mt-2 text-xs text-stone-500">{ong.razaoSocial} · CNPJ {formatarCnpj(ong.cnpj)}</p>
+        </div>
+
+        <BoxPix chave={ong.chavePix} />
+
+        {ong.contato?.telefone && (
+          <a href={linkWhatsApp(ong.contato.telefone, `Olá! Conheci a ${ong.nome} pelo Pet Ajuda.`)} target="_blank" rel="noreferrer" className={`${botaoSecundario} w-fit`}>
+            <MessageCircle className="h-4 w-4 text-green-600" /> Falar com a instituição
+          </a>
+        )}
+
+        <section>
+          <h3 className="mb-3 text-lg font-bold">Animais para adoção</h3>
+          {animais === null ? <Carregando /> : animais.length === 0 ? (
+            <p className="text-sm text-stone-500">No momento não há animais para adoção cadastrados.</p>
+          ) : (
+            <div className="grid gap-4 sm:grid-cols-2">
+              {animais.map((p) => <PublicacaoCard key={p.id} publicacao={p} />)}
+            </div>
+          )}
+        </section>
+
+        <section>
+          <h3 className="mb-3 text-lg font-bold">Campanhas ativas</h3>
+          {campanhas === null ? <Carregando /> : campanhas.length === 0 ? (
+            <p className="text-sm text-stone-500">Nenhuma campanha ativa agora.</p>
+          ) : (
+            <div className="grid gap-3">{campanhas.map((c) => <CardCampanha key={c.id} campanha={c} />)}</div>
+          )}
+        </section>
+      </div>
+    </Modal>
+  )
+}
 
 export default function Ongs() {
   const [cidade, setCidade] = useState('')
-  const [ongs, setOngs] = useState([])
-  const [campanhas, setCampanhas] = useState([])
-  const [pixCopiado, setPixCopiado] = useState(null) // id da ONG cujo Pix foi copiado
+  const [ongs, setOngs] = useState(null) // null = carregando
+  const [campanhas, setCampanhas] = useState(null)
+  const [selecionada, setSelecionada] = useState(null)
 
+  // as duas listas respeitam o filtro de cidade
   useEffect(() => {
-    listarOngs({ cidade }).then(setOngs)
+    let ativo = true
+    setOngs(null)
+    setCampanhas(null)
+    listarOngs({ cidade }).then((l) => ativo && setOngs(l))
+    listarCampanhas({ cidade }).then((l) => ativo && setCampanhas(l))
+    return () => { ativo = false }
   }, [cidade])
-
-  useEffect(() => {
-    listarCampanhas().then(setCampanhas)
-  }, [])
-
-  function copiarPix(ong) {
-    navigator.clipboard.writeText(ong.chavePix)
-    setPixCopiado(ong.id)
-    setTimeout(() => setPixCopiado(null), 2000) // volta ao normal depois de 2s
-  }
-
-  const formatarData = (d) => new Date(d + 'T00:00:00').toLocaleDateString('pt-BR')
 
   return (
     <div className="flex flex-col gap-10">
-      <section className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+      <section className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
         <div>
           <h1 className="text-3xl font-bold">ONGs e protetores</h1>
-          <p className="text-stone-500 mt-1">Instituições validadas que cuidam dos animais da AMUREL.</p>
+          <p className="mt-1 text-stone-500">Instituições validadas que cuidam dos animais da AMUREL.</p>
         </div>
-        <select
-          value={cidade}
-          onChange={(e) => setCidade(e.target.value)}
-          className="bg-white border border-stone-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
-        >
+        <select aria-label="Filtrar por cidade" value={cidade} onChange={(e) => setCidade(e.target.value)} className={`${inputClasse} sm:w-64`}>
           <option value="">Todas as cidades</option>
           {CIDADES_AMUREL.map((c) => <option key={c} value={c}>{c}</option>)}
         </select>
       </section>
 
-      <section className="grid gap-6 sm:grid-cols-2">
-        {ongs.length === 0 && <p className="text-stone-500">Nenhuma ONG cadastrada nesta cidade.</p>}
-        {ongs.map((ong) => (
-          <article key={ong.id} className="bg-white rounded-2xl border border-stone-200 shadow-sm p-6 flex flex-col gap-4">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-2xl bg-green-100 flex items-center justify-center">
-                <HeartHandshake className="w-6 h-6 text-green-700" />
-              </div>
-              <div>
-                <h2 className="font-semibold text-lg">{ong.nome}</h2>
-                <p className="text-sm text-stone-500 flex items-center gap-1">
-                  <MapPin className="w-4 h-4" /> {ong.endereco.bairro}, {ong.endereco.cidade}
+      <section>
+        {ongs === null ? <Carregando texto="Carregando instituições..." /> : ongs.length === 0 ? (
+          <Vazio icone={Building2} titulo="Nenhuma ONG nesta cidade" texto="Tente outra cidade da região ou veja todas as instituições." />
+        ) : (
+          <div className="grid gap-6 sm:grid-cols-2">
+            {ongs.map((ong) => (
+              <article key={ong.id} className="flex flex-col gap-4 rounded-2xl border border-stone-200 bg-white p-6 shadow-sm">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-green-100">
+                    <HeartHandshake className="h-6 w-6 text-green-700" />
+                  </div>
+                  <div className="min-w-0">
+                    <h2 className="truncate text-lg font-semibold">{ong.nome}</h2>
+                    <p className="flex items-center gap-1 text-sm text-stone-500">
+                      <MapPin className="h-4 w-4 shrink-0" /> {ong.endereco.bairro}, {ong.endereco.cidade}
+                    </p>
+                  </div>
+                </div>
+
+                <p className="line-clamp-3 text-sm text-stone-600">{ong.descricao}</p>
+
+                <p className="flex items-center gap-1 text-sm font-medium text-green-700">
+                  <PawPrint className="h-4 w-4" />
+                  {ong.totalAnimais} {ong.totalAnimais === 1 ? 'animal para adoção' : 'animais para adoção'}
                 </p>
-              </div>
-            </div>
 
-            <p className="text-stone-600 text-sm">{ong.descricao}</p>
-
-            <div className="mt-auto bg-stone-50 rounded-xl p-3 flex items-center justify-between gap-3">
-              <div className="min-w-0">
-                <p className="text-xs text-stone-500">Chave Pix para doações</p>
-                <p className="font-mono text-sm truncate">{ong.chavePix}</p>
-              </div>
-              <button
-                onClick={() => copiarPix(ong)}
-                className="flex items-center gap-1 bg-green-600 hover:bg-green-700 text-white text-sm font-semibold px-3 py-2 rounded-lg shrink-0"
-              >
-                {pixCopiado === ong.id ? <><Check className="w-4 h-4" /> Copiado</> : <><Copy className="w-4 h-4" /> Copiar</>}
-              </button>
-            </div>
-          </article>
-        ))}
+                <div className="mt-auto flex flex-col gap-3">
+                  <BoxPix chave={ong.chavePix} />
+                  <button onClick={() => setSelecionada(ong)} className={botaoPrimario}>Conhecer trabalho &amp; doar</button>
+                </div>
+              </article>
+            ))}
+          </div>
+        )}
       </section>
 
       <section className="flex flex-col gap-4">
-        <h2 className="text-2xl font-bold">Campanhas ativas</h2>
-        <div className="grid gap-4 sm:grid-cols-2">
-          {campanhas.map((c) => {
-            const ong = ongs.find((o) => o.id === c.ongId)
-            return (
-              <article key={c.id} className="bg-amber-50 border border-amber-200 rounded-2xl p-5">
-                <h3 className="font-semibold">{c.titulo}</h3>
-                <p className="text-sm text-stone-600 mt-1">{c.descricao}</p>
-                <p className="text-sm text-stone-500 mt-3 flex items-center gap-1">
-                  <CalendarDays className="w-4 h-4" />
-                  {formatarData(c.dataInicio)}
-                  {c.dataFim !== c.dataInicio && ` até ${formatarData(c.dataFim)}`}
-                  {ong && ` · ${ong.nome}`}
-                </p>
-              </article>
-            )
-          })}
-        </div>
+        <h2 className="text-2xl font-bold">Campanhas, feiras e ações</h2>
+        {campanhas === null ? <Carregando /> : campanhas.length === 0 ? (
+          <p className="text-stone-500">Nenhuma campanha ativa {cidade ? `em ${cidade}` : 'no momento'}.</p>
+        ) : (
+          <div className="grid gap-4 sm:grid-cols-2">
+            {campanhas.map((c) => <CardCampanha key={c.id} campanha={c} />)}
+          </div>
+        )}
       </section>
+
+      {selecionada && <ModalOng ong={selecionada} onFechar={() => setSelecionada(null)} />}
     </div>
   )
 }

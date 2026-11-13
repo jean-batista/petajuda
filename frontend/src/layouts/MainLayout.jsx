@@ -18,8 +18,11 @@ export default function MainLayout() {
       <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6">
         <Outlet />
       </main>
-      <footer className="border-t border-stone-200 py-6 text-center text-sm text-stone-500">
-        Pet Ajuda · Proteção animal na AMUREL 🐾
+      <footer className="border-t border-stone-200 bg-white py-8">
+        <div className="mx-auto flex max-w-6xl flex-col items-center gap-3 px-4 text-center">
+          <img src="/logo-completa.png" alt="Pet Ajuda: conectando pessoas e animais por um mundo melhor" className="h-24 w-auto" loading="lazy" />
+          <p className="text-sm text-stone-500">Proteção animal na AMUREL · Tubarão e região</p>
+        </div>
       </footer>
       <AuthModals />
     </div>

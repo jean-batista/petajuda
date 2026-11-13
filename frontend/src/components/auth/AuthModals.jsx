@@ -47,6 +47,7 @@ function Login() {
 
   return (
     <Modal titulo="Entrar no Pet Ajuda" onFechar={fecharModal}>
+      <img src="/logo-completa.png" alt="" className="mx-auto mb-4 h-20 w-auto" />
       <form onSubmit={enviar} className="flex flex-col gap-4" noValidate>
         <Campo rotulo="E-mail">
           {(id) => (

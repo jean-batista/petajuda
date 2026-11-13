@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { NavLink, Link } from 'react-router-dom'
-import { PawPrint, House, HeartHandshake, LayoutDashboard, LogIn, LogOut, ChevronDown } from 'lucide-react'
+import { House, HeartHandshake, LayoutDashboard, LogIn, LogOut, ChevronDown } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { PERFIL } from '../data/enums'
 
@@ -67,9 +67,8 @@ export default function Navbar() {
   return (
     <header className="sticky top-0 z-40 border-b border-stone-200 bg-white/90 backdrop-blur">
       <nav className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-2 px-4">
-        <Link to="/" className="flex shrink-0 items-center gap-2 whitespace-nowrap text-lg font-bold text-green-700">
-          <PawPrint className="h-6 w-6" />
-          Pet Ajuda
+        <Link to="/" className="flex shrink-0 items-center" aria-label="Pet Ajuda, página inicial">
+          <img src="/logo-header.png" alt="Pet Ajuda" className="h-10 w-auto sm:h-12" />
         </Link>
 
         <div className="flex items-center gap-1">

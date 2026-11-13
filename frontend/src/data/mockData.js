@@ -48,7 +48,7 @@ export const publicacoes = [
             idadeAnimal: 'ADULTO', porteAnimal: 'GRANDE', especieAnimal: 'CACHORRO',
         },
         endereco: { estado: 'SC', cidade: 'Capivari de Baixo', bairro: 'Centro', rua: 'Av. Nereu Ramos', complemento: '' },
-        autor: { usuarioId: 'u2', nome: 'Patas da AMUREL', telefone: '48999990003', exibirTelefone: true, ongId: 'o1' },
+        autor: { usuarioId: 'u2', nome: 'Patas Solidárias', telefone: '48999990003', exibirTelefone: true, ongId: 'o1' },
     },
     {
         id: 'p4',
@@ -65,7 +65,7 @@ export const publicacoes = [
             idadeAnimal: 'ADULTO', porteAnimal: 'PEQUENO', especieAnimal: 'GATO',
         },
         endereco: { estado: 'SC', cidade: 'Imbituba', bairro: 'Vila Nova', rua: 'Rua Ernani Cotrim', complemento: '' },
-        autor: { usuarioId: 'u2', nome: 'Patas da AMUREL', telefone: '48999990003', exibirTelefone: true, ongId: 'o1' },
+        autor: { usuarioId: 'u2', nome: 'Patas Solidárias', telefone: '48999990003', exibirTelefone: true, ongId: 'o1' },
     },
     {
         id: 'p5',
@@ -105,8 +105,8 @@ export const publicacoes = [
 
 export const ongs = [
     {
-        id: 'o1', status: 'APROVADA', usuarioId: 'u2', contato: { telefone: '48999990003', email: 'contato@patasdaamurel.org' }, nome: 'Patas da AMUREL', razaoSocial: 'Associação Patas da AMUREL',
-        cnpj: '12345678000199', chavePix: 'contato@patasdaamurel.org',
+        id: 'o1', status: 'APROVADA', usuarioId: 'u2', contato: { telefone: '48999990003', email: 'contato@patassolidarias.org' }, nome: 'Patas Solidárias', razaoSocial: 'Associação Patas Solidárias',
+        cnpj: '12345678000199', chavePix: 'contato@patassolidarias.org',
         descricao: 'Resgate e castração de animais de rua em Tubarão e região.',
         endereco: { estado: 'SC', cidade: 'Tubarão', bairro: 'Centro', rua: 'Rua Altamiro Guimarães', complemento: 'Sala 102' },
     },

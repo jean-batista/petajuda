@@ -8,7 +8,7 @@ export const ESPECIE = { CACHORRO: 'Cachorro', GATO: 'Gato', PASSARO: 'Pássaro'
 export const PORTE = { PEQUENO: 'Pequeno', MEDIO: 'Médio', GRANDE: 'Grande' }
 export const IDADE = { FILHOTE: 'Filhote', ADULTO: 'Adulto', IDOSO: 'Idoso' }
 
-export const CIDADES_AMUREL = [
+export const CIDADES = [
     'Tubarão', 'Laguna', 'Capivari de Baixo', 'Gravatal', 'Braço do Norte',
     'Imbituba', 'Jaguaruna', 'Orleans', 'Armazém', 'São Ludgero',
 ]

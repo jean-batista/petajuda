@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { ShieldCheck, Upload, X, CheckCircle2, Search } from 'lucide-react'
 import { Campo, Selo, inputClasse, botaoPrimario, botaoSecundario } from '../ui'
-import { CIDADES_AMUREL, STATUS_DENUNCIA } from '../../data/enums'
+import { CIDADES, STATUS_DENUNCIA } from '../../data/enums'
 import { lerImagem, formatarData, copiarTexto } from '../../utils/format'
 import { criarDenuncia, consultarDenuncia } from '../../services/denunciaService'
 import { useToast } from '../Toast'
@@ -101,7 +101,7 @@ export default function DenunciaForm() {
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <Campo rotulo="Cidade">{(id) => (
             <select id={id} value={f.cidade} onChange={mudar('cidade')} className={inputClasse}>
-              {CIDADES_AMUREL.map((c) => <option key={c}>{c}</option>)}
+              {CIDADES.map((c) => <option key={c}>{c}</option>)}
             </select>
           )}</Campo>
           <Campo rotulo="Bairro" erro={erros.bairro}>{(id) => <input id={id} value={f.bairro} onChange={mudar('bairro')} className={inputClasse} />}</Campo>

@@ -4,7 +4,7 @@ import { Search, PlusCircle, SearchX } from 'lucide-react'
 import PublicacaoCard from '../components/PublicacaoCard'
 import { Carregando, Vazio, inputClasse } from '../components/ui'
 import { listarPublicacoes } from '../services/publicacaoService'
-import { TIPO_PUBLICACAO, ESPECIE, PORTE, CIDADES_AMUREL } from '../data/enums'
+import { TIPO_PUBLICACAO, ESPECIE, PORTE, CIDADES } from '../data/enums'
 import { useAuth } from '../context/AuthContext'
 
 export default function Home() {
@@ -55,7 +55,7 @@ export default function Home() {
     <div className="flex flex-col gap-8">
       {/* apresentação */}
       <section className="rounded-3xl bg-green-700 px-6 py-10 text-white sm:px-10">
-        <p className="font-medium text-green-200">Região da AMUREL · SC</p>
+        <p className="font-medium text-green-200">Tubarão e região · SC</p>
         <h1 className="mt-2 max-w-xl text-3xl font-bold sm:text-4xl">
           Ajude um animal a voltar para casa ou a encontrar uma família.
         </h1>
@@ -92,7 +92,7 @@ export default function Home() {
 
           <select aria-label="Cidade" value={filtros.cidade} onChange={(e) => alterarFiltro('cidade', e.target.value)} className={inputClasse}>
             <option value="">Todas as cidades</option>
-            {CIDADES_AMUREL.map((c) => <option key={c} value={c}>{c}</option>)}
+            {CIDADES.map((c) => <option key={c} value={c}>{c}</option>)}
           </select>
 
           <select aria-label="Espécie" value={filtros.especie} onChange={(e) => alterarFiltro('especie', e.target.value)} className={inputClasse}>

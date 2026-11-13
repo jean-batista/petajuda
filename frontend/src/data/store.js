@@ -3,7 +3,7 @@
 // Quando o backend Spring estiver pronto, este arquivo deixa de ser usado.
 import * as seed from './mockData'
 
-const CHAVE = 'petajuda:dados:v1'
+const CHAVE = 'petajuda:dados:v2'
 const copia = (valor) => JSON.parse(JSON.stringify(valor))
 
 function dadosIniciais() {

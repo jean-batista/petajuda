@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Upload, X } from 'lucide-react'
 import { Campo, inputClasse, botaoPrimario, botaoSecundario } from '../ui'
-import { TIPO_PUBLICACAO, ESPECIE, PORTE, IDADE, SEXO, CIDADES_AMUREL } from '../../data/enums'
+import { TIPO_PUBLICACAO, ESPECIE, PORTE, IDADE, SEXO, CIDADES } from '../../data/enums'
 import { lerImagem } from '../../utils/format'
 import { criarPublicacao, atualizarPublicacao } from '../../services/publicacaoService'
 import { useToast } from '../Toast'
@@ -178,7 +178,7 @@ export default function PublicacaoForm({ usuario, publicacao, onSalvo, onCancela
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <Campo rotulo="Cidade">{(id) => (
               <select id={id} value={f.cidade} onChange={mudar('cidade')} className={inputClasse}>
-                {CIDADES_AMUREL.map((c) => <option key={c}>{c}</option>)}
+                {CIDADES.map((c) => <option key={c}>{c}</option>)}
               </select>
             )}</Campo>
             <Campo rotulo="Bairro" erro={erros.bairro}>{(id) => <input id={id} value={f.bairro} onChange={mudar('bairro')} className={inputClasse} />}</Campo>

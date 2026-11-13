@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useAuth } from '../../context/AuthContext'
 import { atualizarPerfil, alterarSenha } from '../../services/authService'
 import { buscarOng, atualizarOng } from '../../services/ongService'
-import { CIDADES_AMUREL, STATUS_ONG } from '../../data/enums'
+import { CIDADES, STATUS_ONG } from '../../data/enums'
 import { formatarTelefone, formatarCnpj, somenteDigitos } from '../../utils/format'
 import { Campo, Carregando, Selo, inputClasse, botaoPrimario } from '../ui'
 import { useToast } from '../Toast'
@@ -124,7 +124,7 @@ function DadosInstituicao({ ongId }) {
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Campo rotulo="Cidade">{(id) => (
           <select id={id} value={f.cidade} onChange={mudar('cidade')} className={inputClasse}>
-            {CIDADES_AMUREL.map((c) => <option key={c}>{c}</option>)}
+            {CIDADES.map((c) => <option key={c}>{c}</option>)}
           </select>
         )}</Campo>
         <Campo rotulo="Bairro">{(id) => <input id={id} value={f.bairro} onChange={mudar('bairro')} className={inputClasse} />}</Campo>

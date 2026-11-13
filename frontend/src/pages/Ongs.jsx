@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { MapPin, Copy, Check, CalendarDays, HeartHandshake, MessageCircle, PawPrint, Building2 } from 'lucide-react'
 import { listarOngs, listarCampanhas, listarAnimaisDaOng } from '../services/ongService'
-import { CIDADES_AMUREL } from '../data/enums'
+import { CIDADES } from '../data/enums'
 import { copiarTexto, formatarData, formatarCnpj, linkWhatsApp } from '../utils/format'
 import { useToast } from '../components/Toast'
 import Modal from '../components/Modal'
@@ -126,11 +126,11 @@ export default function Ongs() {
       <section className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
         <div>
           <h1 className="text-3xl font-bold">ONGs e protetores</h1>
-          <p className="mt-1 text-stone-500">Instituições validadas que cuidam dos animais da AMUREL.</p>
+          <p className="mt-1 text-stone-500">Instituições validadas que cuidam dos animais da região.</p>
         </div>
         <select aria-label="Filtrar por cidade" value={cidade} onChange={(e) => setCidade(e.target.value)} className={`${inputClasse} sm:w-64`}>
           <option value="">Todas as cidades</option>
-          {CIDADES_AMUREL.map((c) => <option key={c} value={c}>{c}</option>)}
+          {CIDADES.map((c) => <option key={c} value={c}>{c}</option>)}
         </select>
       </section>
 

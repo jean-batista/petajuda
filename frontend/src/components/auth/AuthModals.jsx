@@ -3,7 +3,7 @@ import { Eye, EyeOff, MailCheck } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import Modal from '../Modal'
 import { Campo, inputClasse, botaoPrimario, botaoSecundario } from '../ui'
-import { CIDADES_AMUREL } from '../../data/enums'
+import { CIDADES } from '../../data/enums'
 import { formatarTelefone, formatarCnpj, somenteDigitos } from '../../utils/format'
 import * as authService from '../../services/authService'
 
@@ -47,7 +47,6 @@ function Login() {
 
   return (
     <Modal titulo="Entrar no Pet Ajuda" onFechar={fecharModal}>
-      <img src="/logo-completa.png" alt="" className="mx-auto mb-4 h-20 w-auto" />
       <form onSubmit={enviar} className="flex flex-col gap-4" noValidate>
         <Campo rotulo="E-mail">
           {(id) => (
@@ -264,7 +263,7 @@ function CadastroOng() {
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <Campo rotulo="Cidade">{(id) => (
               <select id={id} value={o.cidade} onChange={(e) => setO({ ...o, cidade: e.target.value })} className={inputClasse}>
-                {CIDADES_AMUREL.map((c) => <option key={c}>{c}</option>)}
+                {CIDADES.map((c) => <option key={c}>{c}</option>)}
               </select>
             )}</Campo>
             <Campo rotulo="Bairro" erro={erros.bairro}>{(id) => <input id={id} value={o.bairro} onChange={(e) => setO({ ...o, bairro: e.target.value })} className={inputClasse} />}</Campo>

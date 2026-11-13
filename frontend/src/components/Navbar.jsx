@@ -1,5 +1,8 @@
+import { useEffect, useRef, useState } from 'react'
 import { NavLink, Link } from 'react-router-dom'
-import { PawPrint, House, HeartHandshake, LayoutDashboard, LogIn } from 'lucide-react'
+import { PawPrint, House, HeartHandshake, LayoutDashboard, LogIn, LogOut, ChevronDown } from 'lucide-react'
+import { useAuth } from '../context/AuthContext'
+import { PERFIL } from '../data/enums'
 
 // os itens do menu ficam num array e o HTML é gerado com .map()
 const links = [
@@ -8,12 +11,64 @@ const links = [
   { to: '/acoes', label: 'Central', icone: LayoutDashboard },
 ]
 
-export default function Navbar() {
+function MenuUsuario() {
+  const { usuario, sair } = useAuth()
+  const [aberto, setAberto] = useState(false)
+  const caixa = useRef(null)
+
+  // fecha o menu ao clicar fora dele
+  useEffect(() => {
+    const fora = (e) => caixa.current && !caixa.current.contains(e.target) && setAberto(false)
+    document.addEventListener('mousedown', fora)
+    return () => document.removeEventListener('mousedown', fora)
+  }, [])
+
   return (
-    <header className="sticky top-0 z-40 bg-white/90 backdrop-blur border-b border-stone-200">
-      <nav className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between gap-4">
-        <Link to="/" className="flex items-center gap-2 font-bold text-green-700 text-lg">
-          <PawPrint className="w-6 h-6" />
+    <div className="relative ml-2" ref={caixa}>
+      <button
+        onClick={() => setAberto(!aberto)}
+        aria-expanded={aberto}
+        className="flex items-center gap-2 rounded-xl border border-stone-200 bg-white py-1.5 pl-1.5 pr-3 text-sm font-medium hover:bg-stone-50"
+      >
+        <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-green-600 font-bold text-white">
+          {usuario.nome[0].toUpperCase()}
+        </span>
+        <span className="hidden max-w-28 truncate sm:inline">{usuario.nome}</span>
+        <ChevronDown className="h-4 w-4 text-stone-400" />
+      </button>
+
+      {aberto && (
+        <div className="absolute right-0 mt-2 w-64 rounded-2xl border border-stone-200 bg-white p-2 shadow-lg">
+          <div className="border-b border-stone-100 px-3 py-2">
+            <p className="truncate font-semibold">{usuario.nome} {usuario.sobrenome}</p>
+            <p className="truncate text-xs text-stone-500">{usuario.email}</p>
+            <span className="mt-1 inline-block rounded-full bg-green-100 px-2 py-0.5 text-xs font-bold text-green-700">
+              {PERFIL[usuario.perfil]}
+            </span>
+          </div>
+          <Link to="/acoes" onClick={() => setAberto(false)} className="mt-1 flex items-center gap-2 rounded-xl px-3 py-2 text-sm hover:bg-stone-100">
+            <LayoutDashboard className="h-4 w-4" /> Central de Ações
+          </Link>
+          <button
+            onClick={() => { setAberto(false); sair() }}
+            className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm text-red-600 hover:bg-red-50"
+          >
+            <LogOut className="h-4 w-4" /> Sair
+          </button>
+        </div>
+      )}
+    </div>
+  )
+}
+
+export default function Navbar() {
+  const { usuario, pronto, abrirModal } = useAuth()
+
+  return (
+    <header className="sticky top-0 z-40 border-b border-stone-200 bg-white/90 backdrop-blur">
+      <nav className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-2 px-4">
+        <Link to="/" className="flex shrink-0 items-center gap-2 whitespace-nowrap text-lg font-bold text-green-700">
+          <PawPrint className="h-6 w-6" />
           Pet Ajuda
         </Link>
 
@@ -24,21 +79,28 @@ export default function Navbar() {
               to={to}
               end={to === '/'}
               className={({ isActive }) =>
-                `flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium transition ${
+                `flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium transition ${
                   isActive ? 'bg-green-50 text-green-700' : 'text-stone-600 hover:bg-stone-100'
                 }`
               }
             >
-              <Icone className="w-5 h-5" />
+              <Icone className="h-5 w-5" />
               {/* no celular só o ícone aparece; a partir de 640px aparece o texto */}
               <span className="hidden sm:inline">{label}</span>
             </NavLink>
           ))}
 
-          <Link to="/login" className="ml-2 flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-xl text-sm font-semibold">
-            <LogIn className="w-4 h-4" />
-            <span className="hidden sm:inline">Entrar</span>
-          </Link>
+          {!pronto ? null : usuario ? (
+            <MenuUsuario />
+          ) : (
+            <button
+              onClick={() => abrirModal('login')}
+              className="ml-2 flex items-center gap-2 rounded-xl bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-700"
+            >
+              <LogIn className="h-4 w-4" />
+              <span className="hidden sm:inline">Entrar</span>
+            </button>
+          )}
         </div>
       </nav>
     </header>

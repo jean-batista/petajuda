@@ -1,12 +1,19 @@
-import { Routes, Route } from 'react-router-dom'
+import { useEffect } from 'react'
+import { Routes, Route, Navigate } from 'react-router-dom'
 import MainLayout from './layouts/MainLayout'
 import Home from './pages/Home'
 import Detalhes from './pages/Detalhes'
 import Ongs from './pages/Ongs'
 import Acoes from './pages/Acoes'
-import Login from './pages/login'
-import RegisterUser from './pages/RegisterUser'      // Importa a Tela 07 (Cadastro)
-import NovaPublicacao from './pages/NovaPublicacao'  // Importa a Tela 12 (Nova Publicação)
+import { useAuth } from './context/AuthContext'
+
+// Links antigos (/login, /cadastrar) agora abrem a janela de acesso por cima do feed.
+// Assim continuam existindo só 4 telas, como o grupo definiu.
+function AbrirJanela({ nome }) {
+  const { abrirModal } = useAuth()
+  useEffect(() => { abrirModal(nome) }, [nome, abrirModal])
+  return <Navigate to="/" replace />
+}
 
 export default function App() {
   return (
@@ -16,11 +23,13 @@ export default function App() {
         <Route path="/publicacoes/:id" element={<Detalhes />} />
         <Route path="/ongs" element={<Ongs />} />
         <Route path="/acoes" element={<Acoes />} />
-        <Route path="/login" element={<Login />} />
 
-        {/* Novas rotas integradas */}
-        <Route path="/cadastrar" element={<RegisterUser />} />               {/* Tela 07 */}
-        <Route path="/painel/publicacoes/nova" element={<NovaPublicacao />} /> {/* Tela 12 */}
+        <Route path="/login" element={<AbrirJanela nome="login" />} />
+        <Route path="/cadastrar" element={<AbrirJanela nome="cadastro" />} />
+        <Route path="/cadastrar-ong" element={<AbrirJanela nome="ong" />} />
+        <Route path="/recuperar-senha" element={<AbrirJanela nome="recuperar" />} />
+        <Route path="/painel/*" element={<Navigate to="/acoes" replace />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Route>
     </Routes>
   )

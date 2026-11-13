@@ -1,101 +1,116 @@
-import dados, { salvar, gerarId, esperar } from '../data/store'
+/**
+ * @file authService.js
+ * @description Serviço de integração frontend para autenticação e gestão de perfil de usuário.
+ */
 
-const semSenha = ({ senha: _senha, ...resto }) => resto // nunca devolve a senha para a tela
-const normalizar = (email) => email.trim().toLowerCase()
+const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api/v1'
 
-// futuro: POST /api/auth/login
+const getHeaders = () => {
+  const token = localStorage.getItem('petajuda_token')
+  return {
+    'Content-Type': 'application/json',
+    ...(token ? { Authorization: `Bearer ${token}` } : {})
+  }
+}
+
+async function tratarErroResponse(res, mensagemPadrao) {
+  try {
+    const errorData = await res.json()
+    throw new Error(errorData.detail || errorData.message || mensagemPadrao)
+  } catch (err) {
+    if (err.message && err.message !== mensagemPadrao) throw err
+    throw new Error(mensagemPadrao)
+  }
+}
+
+/**
+ * Realiza o login do usuário na API.
+ */
 export async function login(email, senha) {
-  await esperar()
-  const usuario = dados.usuarios.find((u) => normalizar(u.email) === normalizar(email))
-  if (!usuario || usuario.senha !== senha) throw new Error('E-mail ou senha inválidos.')
-  if (!usuario.ativo) throw new Error('Esta conta está suspensa. Entre em contato com a administração.')
-  return semSenha(usuario)
-}
-
-// futuro: POST /api/auth/register
-export async function registrar({ nome, sobrenome, email, telefone, senha }) {
-  await esperar()
-  if (dados.usuarios.some((u) => normalizar(u.email) === normalizar(email))) {
-    throw new Error('Já existe uma conta com este e-mail.')
-  }
-  const usuario = {
-    id: gerarId('u'), nome, sobrenome, email: email.trim(), telefone, senha,
-    perfil: 'USUARIO_COMUM', ativo: true, dataCriacao: new Date().toISOString(),
-  }
-  dados.usuarios.push(usuario)
-  salvar()
-  return semSenha(usuario)
-}
-
-// futuro: POST /api/auth/register-ong  (cria Usuário + perfil ONG, que fica PENDENTE até o admin aprovar)
-export async function registrarOng({ responsavel, ong }) {
-  await esperar()
-  if (dados.usuarios.some((u) => normalizar(u.email) === normalizar(responsavel.email))) {
-    throw new Error('Já existe uma conta com este e-mail.')
-  }
-  if (dados.ongs.some((o) => o.cnpj === ong.cnpj)) {
-    throw new Error('Já existe uma instituição cadastrada com este CNPJ.')
-  }
-  const usuarioId = gerarId('u')
-  const ongId = gerarId('o')
-  dados.ongs.push({
-    id: ongId, status: 'PENDENTE', usuarioId,
-    contato: { telefone: responsavel.telefone, email: responsavel.email.trim() },
-    nome: ong.nome, razaoSocial: ong.razaoSocial, cnpj: ong.cnpj, chavePix: ong.chavePix,
-    descricao: ong.descricao, endereco: ong.endereco,
+  const res = await fetch(`${BASE_URL}/autenticacao/login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, senha })
   })
-  const usuario = {
-    id: usuarioId, nome: responsavel.nome, sobrenome: responsavel.sobrenome,
-    email: responsavel.email.trim(), telefone: responsavel.telefone, senha: responsavel.senha,
-    perfil: 'ONG', ongId, ativo: true, dataCriacao: new Date().toISOString(),
-  }
-  dados.usuarios.push(usuario)
-  salvar()
-  return semSenha(usuario)
+  if (!res.ok) await tratarErroResponse(res, 'E-mail ou senha incorretos.')
+  return await res.json()
 }
 
-// futuro: endpoint de recuperação de senha (envia um token por e-mail)
+/**
+ * Realiza o cadastro de um novo usuário.
+ */
+export async function cadastrarUsuario(dados) {
+  const res = await fetch(`${BASE_URL}/autenticacao/cadastro`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(dados)
+  })
+  if (!res.ok) await tratarErroResponse(res, 'Falha ao realizar cadastro.')
+  return await res.json()
+}
+
+/**
+ * Realiza o cadastro de uma nova ONG / protetor.
+ */
+export async function cadastrarOng(dados) {
+  const res = await fetch(`${BASE_URL}/autenticacao/cadastro-ong`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(dados)
+  })
+  if (!res.ok) await tratarErroResponse(res, 'Falha ao cadastrar instituição.')
+  return await res.json()
+}
+
+/**
+ * Obtém os dados do perfil do usuário logado (GET /api/v1/usuarios/me).
+ */
+export async function obterPerfilLogado() {
+  const res = await fetch(`${BASE_URL}/usuarios/me`, {
+    headers: getHeaders()
+  })
+  if (!res.ok) await tratarErroResponse(res, 'Falha ao carregar perfil do usuário.')
+  return await res.json()
+}
+
+/**
+ * Atualiza os dados do perfil do usuário logado (PUT /api/v1/usuarios/me).
+ */
+export async function atualizarPerfil(id, dados) {
+  const res = await fetch(`${BASE_URL}/usuarios/me`, {
+    method: 'PUT',
+    headers: getHeaders(),
+    body: JSON.stringify(dados)
+  })
+  if (!res.ok) await tratarErroResponse(res, 'Falha ao atualizar perfil.')
+  return await res.json()
+}
+
+/**
+ * Altera a senha do usuário logado (PATCH /api/v1/usuarios/me/senha).
+ */
+export async function alterarSenha(senhaAntiga, senhaNova) {
+  const res = await fetch(`${BASE_URL}/usuarios/me/senha`, {
+    method: 'PATCH',
+    headers: getHeaders(),
+    body: JSON.stringify({ senhaAntiga, senhaNova })
+  })
+  if (!res.ok) await tratarErroResponse(res, 'Falha ao alterar senha.')
+  return true
+}
+
+/**
+ * Envia solicitação de recuperação de senha.
+ */
 export async function recuperarSenha(email) {
-  await esperar()
-  // por segurança a resposta é a mesma exista ou não a conta
-  return { enviado: true, email: email.trim() }
-}
-
-// futuro: GET /api/usuarios/me
-export async function buscarUsuario(id) {
-  const usuario = dados.usuarios.find((u) => u.id === id)
-  return usuario && usuario.ativo ? semSenha(usuario) : null
-}
-
-// futuro: PUT /api/usuarios/me
-export async function atualizarPerfil(id, { nome, sobrenome, telefone }) {
-  await esperar()
-  const usuario = dados.usuarios.find((u) => u.id === id)
-  Object.assign(usuario, { nome, sobrenome, telefone })
-  salvar()
-  return semSenha(usuario)
-}
-
-// futuro: PATCH /api/usuarios/me/senha
-export async function alterarSenha(id, senhaAtual, novaSenha) {
-  await esperar()
-  const usuario = dados.usuarios.find((u) => u.id === id)
-  if (usuario.senha !== senhaAtual) throw new Error('A senha atual está incorreta.')
-  usuario.senha = novaSenha
-  salvar()
-}
-
-// futuro: GET /api/usuarios (ADMIN)
-export async function listarUsuarios() {
-  await esperar(150)
-  return dados.usuarios.map(semSenha)
-}
-
-// futuro: PATCH /api/usuarios/{id}/status (ADMIN)
-export async function alterarStatusUsuario(id, ativo) {
-  await esperar(150)
-  const usuario = dados.usuarios.find((u) => u.id === id)
-  usuario.ativo = ativo
-  salvar()
-  return semSenha(usuario)
+  const res = await fetch(`${BASE_URL}/autenticacao/recuperar-senha`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email })
+  })
+  if (!res.ok) {
+    // Apenas silencia erro para segurança ou dispara se necessário
+    return true
+  }
+  return true
 }

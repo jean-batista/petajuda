@@ -1,14 +1,19 @@
+/**
+ * @file DenunciaForm.jsx
+ * @description Componente para envio de denúncias anônimas e acompanhamento por protocolo.
+ * Utiliza denunciaService.
+ */
+
 import { useState } from 'react'
 import { ShieldCheck, Upload, X, CheckCircle2, Search } from 'lucide-react'
 import { Campo, Selo, inputClasse, botaoPrimario, botaoSecundario } from '../ui'
-import { CIDADES_AMUREL, STATUS_DENUNCIA } from '../../data/enums'
-import { lerImagem, formatarData, copiarTexto } from '../../utils/format'
+import { STATUS_DENUNCIA } from '../../data/enums'
+import { formatarData, copiarTexto } from '../../utils/format'
 import { criarDenuncia, consultarDenuncia } from '../../services/denunciaService'
 import { useToast } from '../Toast'
 
-const vazio = { descricao: '', fotoUrl: '', cidade: 'Tubarão', bairro: '', rua: '', complemento: '' }
+const vazio = { descricao: '', cidade: '', bairro: '', rua: '', complemento: '' }
 
-// acompanhar uma denúncia já enviada usando o protocolo (RF14)
 function Acompanhar() {
   const [protocolo, setProtocolo] = useState('')
   const [resultado, setResultado] = useState(undefined)
@@ -28,7 +33,7 @@ function Acompanhar() {
       {resultado === null && <p className="mt-3 text-sm text-red-600">Protocolo não encontrado.</p>}
       {resultado && (
         <p className="mt-3 flex items-center gap-2 text-sm">
-          Situação: <Selo classe={STATUS_DENUNCIA[resultado.status].classe}>{STATUS_DENUNCIA[resultado.status].label}</Selo>
+          Situação: <Selo classe={STATUS_DENUNCIA[resultado.status]?.classe}>{STATUS_DENUNCIA[resultado.status]?.label || resultado.status}</Selo>
           <span className="text-stone-500">· enviada em {formatarData(resultado.data)}</span>
         </p>
       )}
@@ -36,38 +41,58 @@ function Acompanhar() {
   )
 }
 
-// Tela 05: denúncia anônima. Não envia nenhum dado de quem denuncia.
 export default function DenunciaForm() {
   const toast = useToast()
   const [f, setF] = useState(vazio)
+  const [fotoArquivo, setFotoArquivo] = useState(null)
+  const [fotoPreview, setFotoPreview] = useState('')
   const [erros, setErros] = useState({})
   const [enviando, setEnviando] = useState(false)
   const [protocolo, setProtocolo] = useState(null)
+
   const mudar = (campo) => (e) => setF({ ...f, [campo]: e.target.value })
 
-  async function escolherFoto(e) {
+  function escolherFoto(e) {
     const arquivo = e.target.files?.[0]
     e.target.value = ''
     if (!arquivo) return
-    try { setF({ ...f, fotoUrl: await lerImagem(arquivo) }) } catch (err) { toast.erro(err.message) }
+    setFotoArquivo(arquivo)
+    setFotoPreview(URL.createObjectURL(arquivo))
   }
 
   async function enviar(ev) {
     ev.preventDefault()
     const e = {}
     if (f.descricao.trim().length < 15) e.descricao = 'Descreva a situação com mais detalhes (mínimo 15 caracteres).'
+    if (!f.cidade.trim()) e.cidade = 'Informe a cidade.'
     if (!f.bairro.trim()) e.bairro = 'Informe o bairro.'
     if (!f.rua.trim()) e.rua = 'Informe a rua ou um ponto de referência.'
     setErros(e)
     if (Object.keys(e).length) return
+
     setEnviando(true)
-    const denuncia = await criarDenuncia({
-      descricao: f.descricao.trim(), fotoUrl: f.fotoUrl,
-      endereco: { cidade: f.cidade, bairro: f.bairro.trim(), rua: f.rua.trim(), complemento: f.complemento.trim() },
-    })
-    setEnviando(false)
-    setProtocolo(denuncia.id)
-    setF(vazio)
+    try {
+      const denuncia = await criarDenuncia({
+        titulo: 'Denúncia de maus-tratos / abandono',
+        descricao: f.descricao.trim(),
+        endereco: {
+          estado: 'SC',
+          cidade: f.cidade.trim(),
+          bairro: f.bairro.trim(),
+          rua: f.rua.trim(),
+          complemento: f.complemento.trim()
+        }
+      }, fotoArquivo)
+
+      setEnviando(false)
+      setProtocolo(denuncia.id)
+      setF(vazio)
+      setFotoArquivo(null)
+      setFotoPreview('')
+    } catch (err) {
+      toast.erro(err.message || 'Falha ao registrar denúncia.')
+      setEnviando(false)
+    }
   }
 
   if (protocolo) {
@@ -99,27 +124,23 @@ export default function DenunciaForm() {
         </Campo>
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <Campo rotulo="Cidade">{(id) => (
-            <select id={id} value={f.cidade} onChange={mudar('cidade')} className={inputClasse}>
-              {CIDADES_AMUREL.map((c) => <option key={c}>{c}</option>)}
-            </select>
-          )}</Campo>
+          <Campo rotulo="Cidade" erro={erros.cidade}>{(id) => <input id={id} value={f.cidade} onChange={mudar('cidade')} className={inputClasse} />}</Campo>
           <Campo rotulo="Bairro" erro={erros.bairro}>{(id) => <input id={id} value={f.bairro} onChange={mudar('bairro')} className={inputClasse} />}</Campo>
           <Campo rotulo="Rua" erro={erros.rua}>{(id) => <input id={id} value={f.rua} onChange={mudar('rua')} className={inputClasse} />}</Campo>
           <Campo rotulo="Ponto de referência (opcional)">{(id) => <input id={id} value={f.complemento} onChange={mudar('complemento')} className={inputClasse} />}</Campo>
         </div>
 
         <div>
-          <p className="mb-1.5 text-sm font-medium text-stone-700">Foto ou evidência (opcional)</p>
-          {f.fotoUrl ? (
+          <p className="mb-1.5 text-sm font-medium text-stone-700">Foto ou evidência <span className="text-rose-500">*</span></p>
+          {fotoPreview ? (
             <div className="relative h-40 overflow-hidden rounded-xl border border-stone-300 bg-stone-100">
-              <img src={f.fotoUrl} alt="Evidência anexada" className="h-full w-full object-contain" />
-              <button type="button" onClick={() => setF({ ...f, fotoUrl: '' })} aria-label="Remover foto" className="absolute right-2 top-2 rounded-full bg-red-600 p-1 text-white"><X className="h-4 w-4" /></button>
+              <img src={fotoPreview} alt="Evidência anexada" className="h-full w-full object-contain" />
+              <button type="button" onClick={() => { setFotoPreview(''); setFotoArquivo(null) }} aria-label="Remover foto" className="absolute right-2 top-2 rounded-full bg-red-600 p-1 text-white"><X className="h-4 w-4" /></button>
             </div>
           ) : (
             <label className="block cursor-pointer rounded-xl border-2 border-dashed border-stone-300 p-5 text-center hover:bg-stone-50">
               <Upload className="mx-auto h-8 w-8 text-stone-400" />
-              <span className="mt-1 block text-sm text-stone-600">Clique para anexar uma imagem</span>
+              <span className="mt-1 block text-sm text-stone-600">Clique para anexar uma imagem obrigatória de evidência</span>
               <input type="file" accept="image/*" onChange={escolherFoto} className="hidden" />
             </label>
           )}

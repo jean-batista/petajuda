@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useLocation } from 'react-router-dom'
 import {
-  FileText, PlusCircle, ShieldAlert, UserCog, Megaphone, BarChart3, Building2, Gavel, LogIn, UserPlus, Hourglass, Ban,
+  FileText, PlusCircle, ShieldAlert, UserCog, Megaphone, BarChart3, Building2, Gavel, LogIn, UserPlus, Hourglass, Ban, PawPrint,
 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { PERFIL } from '../data/enums'
@@ -9,12 +9,12 @@ import { buscarOng } from '../services/ongService'
 import { Carregando } from '../components/ui'
 import MinhasPublicacoes from '../components/acoes/MinhasPublicacoes'
 import PublicacaoForm from '../components/acoes/PublicacaoForm'
+import MeusAnimais from '../components/acoes/MeusAnimais'
 import DenunciaForm from '../components/acoes/DenunciaForm'
 import CampanhasOng from '../components/acoes/CampanhasOng'
 import MeuPerfil from '../components/acoes/MeuPerfil'
 import { AdminMetricas, AdminDenuncias, AdminOngs, AdminModeracao } from '../components/acoes/Admin'
 
-// quais abas cada perfil enxerga (RF05 - diferenciação de perfis)
 const ABAS = {
   VISITANTE: [
     { id: 'denuncia', rotulo: 'Denúncia anônima', icone: ShieldAlert },
@@ -22,12 +22,14 @@ const ABAS = {
   USUARIO_COMUM: [
     { id: 'publicacoes', rotulo: 'Minhas publicações', icone: FileText },
     { id: 'nova', rotulo: 'Nova publicação', icone: PlusCircle },
+    { id: 'animais', rotulo: 'Meus animais', icone: PawPrint },
     { id: 'denuncia', rotulo: 'Denúncia anônima', icone: ShieldAlert },
     { id: 'perfil', rotulo: 'Meu perfil', icone: UserCog },
   ],
   ONG: [
-    { id: 'publicacoes', rotulo: 'Animais e publicações', icone: FileText },
+    { id: 'publicacoes', rotulo: 'Publicações', icone: FileText },
     { id: 'nova', rotulo: 'Nova publicação', icone: PlusCircle },
+    { id: 'animais', rotulo: 'Animais cadastrados', icone: PawPrint },
     { id: 'campanhas', rotulo: 'Campanhas', icone: Megaphone },
     { id: 'perfil', rotulo: 'Instituição e perfil', icone: UserCog },
     { id: 'denuncia', rotulo: 'Denúncia anônima', icone: ShieldAlert },
@@ -40,17 +42,16 @@ const ABAS = {
   ],
 }
 
-// convite para entrar, mostrado a quem ainda não fez login
 function ConviteLogin() {
   const { abrirModal } = useAuth()
   return (
-    <div className="flex flex-col gap-4 rounded-3xl bg-green-700 p-6 text-white sm:flex-row sm:items-center sm:justify-between sm:p-8">
+    <div className="flex flex-col gap-4 rounded-3xl bg-emerald-700 p-6 text-white sm:flex-row sm:items-center sm:justify-between sm:p-8 shadow-sm">
       <div>
         <h2 className="text-xl font-bold">Entre para publicar e gerenciar</h2>
-        <p className="mt-1 text-green-100">Com uma conta você cadastra animais, acompanha suas publicações e, se for ONG, divulga campanhas.</p>
+        <p className="mt-1 text-emerald-100 text-sm">Com uma conta você cadastra animais, acompanha suas publicações e, se for ONG, divulga campanhas.</p>
       </div>
       <div className="flex shrink-0 flex-wrap gap-2">
-        <button onClick={() => abrirModal('login')} className="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-green-800 hover:bg-green-50"><LogIn className="h-4 w-4" /> Entrar</button>
+        <button onClick={() => abrirModal('login')} className="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-emerald-800 hover:bg-emerald-50 shadow-sm"><LogIn className="h-4 w-4" /> Entrar</button>
         <button onClick={() => abrirModal('cadastro')} className="inline-flex items-center gap-2 rounded-xl border border-white/60 px-4 py-2.5 text-sm font-semibold hover:bg-white/10"><UserPlus className="h-4 w-4" /> Criar conta</button>
         <button onClick={() => abrirModal('ong')} className="inline-flex items-center gap-2 rounded-xl border border-white/60 px-4 py-2.5 text-sm font-semibold hover:bg-white/10"><Building2 className="h-4 w-4" /> Cadastrar ONG</button>
       </div>
@@ -58,14 +59,13 @@ function ConviteLogin() {
   )
 }
 
-// aviso para ONG ainda não aprovada ou reprovada
 function AvisoOng({ status }) {
   if (status === 'APROVADA' || !status) return null
   const pendente = status === 'PENDENTE'
   const Icone = pendente ? Hourglass : Ban
   return (
-    <div className={`flex items-start gap-3 rounded-2xl p-4 text-sm ${pendente ? 'bg-amber-50 text-amber-900' : 'bg-red-50 text-red-800'}`}>
-      <Icone className="h-5 w-5 shrink-0" />
+    <div className={`flex items-start gap-3 rounded-2xl p-4 text-sm border ${pendente ? 'bg-amber-50 text-amber-900 border-amber-200' : 'bg-rose-50 text-rose-800 border-rose-200'}`}>
+      <Icone className="h-5 w-5 shrink-0 mt-0.5" />
       <p>
         {pendente
           ? 'Seu cadastro institucional está em análise. Você já pode preparar publicações e campanhas, mas elas só aparecem para o público depois da aprovação.'
@@ -77,26 +77,29 @@ function AvisoOng({ status }) {
 
 function Painel({ perfil, abaInicial }) {
   const { usuario } = useAuth()
-  const abas = ABAS[perfil]
+  const abas = ABAS[perfil] || ABAS.VISITANTE
   const [aba, setAba] = useState(abas.some((a) => a.id === abaInicial) ? abaInicial : abas[0].id)
   const [statusOng, setStatusOng] = useState(null)
 
   useEffect(() => {
-    if (perfil === 'ONG') buscarOng(usuario.ongId).then((o) => setStatusOng(o?.status))
+    if (perfil === 'ONG' && usuario?.ongId) {
+      buscarOng(usuario.ongId).then((o) => setStatusOng(o?.status))
+    }
   }, [perfil, usuario])
 
   function conteudo() {
     switch (aba) {
       case 'publicacoes': return <MinhasPublicacoes usuario={usuario} onNova={() => setAba('nova')} />
       case 'nova': return (
-        <div className="rounded-2xl border border-stone-200 bg-white p-5 sm:p-6">
+        <div className="rounded-2xl border border-stone-200 bg-white p-5 sm:p-6 shadow-sm">
           <PublicacaoForm usuario={usuario} onSalvo={() => setAba('publicacoes')} />
         </div>
       )
+      case 'animais': return <MeusAnimais usuario={usuario} />
       case 'denuncia': return <DenunciaForm />
       case 'perfil': return <MeuPerfil />
-      case 'campanhas': return <CampanhasOng ongId={usuario.ongId} />
-      case 'metricas': return <AdminMetricas irPara={setAba} />
+      case 'campanhas': return <CampanhasOng ongId={usuario?.ongId} />
+      case 'metricas': return <AdminMetricas />
       case 'denuncias': return <AdminDenuncias />
       case 'ongs': return <AdminOngs />
       case 'moderacao': return <AdminModeracao />
@@ -109,12 +112,11 @@ function Painel({ perfil, abaInicial }) {
       {perfil === 'VISITANTE' && <ConviteLogin />}
       {perfil === 'ONG' && <AvisoOng status={statusOng} />}
 
-      {/* abas: no celular rolam para o lado */}
       <div role="tablist" className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1">
         {abas.map(({ id, rotulo, icone: Icone }) => (
           <button key={id} role="tab" aria-selected={aba === id} onClick={() => setAba(id)}
-            className={`flex shrink-0 items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition ${
-              aba === id ? 'bg-green-600 text-white shadow-sm' : 'border border-stone-200 bg-white text-stone-600 hover:bg-stone-100'
+            className={`flex shrink-0 items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition shadow-sm ${
+              aba === id ? 'bg-emerald-600 text-white' : 'border border-stone-200 bg-white text-stone-600 hover:bg-stone-50'
             }`}>
             <Icone className="h-4 w-4" /> {rotulo}
           </button>
@@ -126,7 +128,6 @@ function Painel({ perfil, abaInicial }) {
   )
 }
 
-// Tela 04: concentra o gerenciamento, organizado pelo perfil de quem está logado
 export default function Acoes() {
   const { usuario, pronto } = useAuth()
   const location = useLocation()
@@ -137,14 +138,12 @@ export default function Acoes() {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-3xl font-bold">Central de Ações</h1>
+        <h1 className="text-3xl font-bold text-stone-900">Central de Ações</h1>
         <p className="mt-1 text-stone-500">
-          {usuario ? <>Olá, {usuario.nome}! Você está como <strong>{PERFIL[perfil]}</strong>.</> : 'Faça uma denúncia anônima ou entre para gerenciar suas publicações.'}
+          {usuario ? <>Olá, {usuario.nome || usuario.nomeCompleto?.split(' ')[0]}! Você está como <strong>{PERFIL[perfil] || perfil}</strong>.</> : 'Faça uma denúncia anônima ou entre para gerenciar suas publicações.'}
         </p>
       </div>
-      {/* key: ao entrar/sair, o painel recomeça com as abas do novo perfil */}
       <Painel key={`${perfil}-${usuario?.id}`} perfil={perfil} abaInicial={location.state?.aba} />
     </div>
   )
 }
-

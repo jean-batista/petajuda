@@ -4,7 +4,7 @@ import { House, HeartHandshake, LayoutDashboard, LogIn, LogOut, ChevronDown } fr
 import { useAuth } from '../context/AuthContext'
 import { PERFIL } from '../data/enums'
 
-// os itens do menu ficam num array e o HTML é gerado com .map()
+// Os itens do menu ficam num array e o HTML é gerado com .map()
 const links = [
   { to: '/', label: 'Feed', icone: House },
   { to: '/ongs', label: 'ONGs', icone: HeartHandshake },
@@ -16,42 +16,50 @@ function MenuUsuario() {
   const [aberto, setAberto] = useState(false)
   const caixa = useRef(null)
 
-  // fecha o menu ao clicar fora dele
+  // Fecha o menu ao clicar fora dele
   useEffect(() => {
     const fora = (e) => caixa.current && !caixa.current.contains(e.target) && setAberto(false)
     document.addEventListener('mousedown', fora)
     return () => document.removeEventListener('mousedown', fora)
   }, [])
 
+  // Extração segura do nome (considerando tanto nomeCompleto quanto nome separado)
+  const nomeExibicao = usuario?.nomeCompleto || usuario?.nome || 'Usuário'
+  const inicial = nomeExibicao.charAt(0).toUpperCase()
+  
+  // Tratamento do perfil mapeado do enum do Backend (ex: USUARIO_COMUM, ADMIN, ONG)
+  const perfilChave = usuario?.tipoPerfil || usuario?.perfil || 'USUARIO_COMUM'
+  const rotuloPerfil = PERFIL[perfilChave] || perfilChave
+
   return (
     <div className="relative ml-2" ref={caixa}>
       <button
         onClick={() => setAberto(!aberto)}
         aria-expanded={aberto}
-        className="flex items-center gap-2 rounded-xl border border-stone-200 bg-white py-1.5 pl-1.5 pr-3 text-sm font-medium hover:bg-stone-50"
+        className="flex items-center gap-2 rounded-xl border border-stone-200 bg-white py-1.5 pl-1.5 pr-3 text-sm font-medium hover:bg-stone-50 transition-colors"
       >
-        <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-green-600 font-bold text-white">
-          {usuario.nome[0].toUpperCase()}
+        <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-600 font-bold text-white shadow-sm">
+          {inicial}
         </span>
-        <span className="hidden max-w-28 truncate sm:inline">{usuario.nome}</span>
+        <span className="hidden max-w-28 truncate sm:inline text-stone-800">{nomeExibicao}</span>
         <ChevronDown className="h-4 w-4 text-stone-400" />
       </button>
 
       {aberto && (
-        <div className="absolute right-0 mt-2 w-64 rounded-2xl border border-stone-200 bg-white p-2 shadow-lg">
-          <div className="border-b border-stone-100 px-3 py-2">
-            <p className="truncate font-semibold">{usuario.nome} {usuario.sobrenome}</p>
-            <p className="truncate text-xs text-stone-500">{usuario.email}</p>
-            <span className="mt-1 inline-block rounded-full bg-green-100 px-2 py-0.5 text-xs font-bold text-green-700">
-              {PERFIL[usuario.perfil]}
+        <div className="absolute right-0 mt-2 w-64 rounded-2xl border border-stone-200 bg-white p-2 shadow-xl animate-fade-in z-50">
+          <div className="border-b border-stone-100 px-3 py-2.5">
+            <p className="truncate font-semibold text-stone-900">{nomeExibicao}</p>
+            <p className="truncate text-xs text-stone-500">{usuario?.email}</p>
+            <span className="mt-1.5 inline-block rounded-full bg-emerald-100 px-2.5 py-0.5 text-[11px] font-bold text-emerald-800 border border-emerald-200">
+              {rotuloPerfil}
             </span>
           </div>
-          <Link to="/acoes" onClick={() => setAberto(false)} className="mt-1 flex items-center gap-2 rounded-xl px-3 py-2 text-sm hover:bg-stone-100">
-            <LayoutDashboard className="h-4 w-4" /> Central de Ações
+          <Link to="/acoes" onClick={() => setAberto(false)} className="mt-1 flex items-center gap-2 rounded-xl px-3 py-2 text-sm text-stone-700 hover:bg-stone-100 transition-colors">
+            <LayoutDashboard className="h-4 w-4 text-stone-500" /> Central de Ações
           </Link>
           <button
             onClick={() => { setAberto(false); sair() }}
-            className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm text-red-600 hover:bg-red-50"
+            className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm text-rose-600 hover:bg-rose-50 transition-colors"
           >
             <LogOut className="h-4 w-4" /> Sair
           </button>
@@ -79,7 +87,7 @@ export default function Navbar() {
               end={to === '/'}
               className={({ isActive }) =>
                 `flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium transition ${
-                  isActive ? 'bg-green-50 text-green-700' : 'text-stone-600 hover:bg-stone-100'
+                  isActive ? 'bg-emerald-50 text-emerald-700 font-semibold' : 'text-stone-600 hover:bg-stone-100'
                 }`
               }
             >
@@ -94,7 +102,7 @@ export default function Navbar() {
           ) : (
             <button
               onClick={() => abrirModal('login')}
-              className="ml-2 flex items-center gap-2 rounded-xl bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-700"
+              className="ml-2 flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700 shadow-sm transition-colors"
             >
               <LogIn className="h-4 w-4" />
               <span className="hidden sm:inline">Entrar</span>

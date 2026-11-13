@@ -1,35 +1,53 @@
 import { useState } from 'react'
-import { Dog, Cat, Bird } from 'lucide-react'
+import { Dog, Cat, Bird, Shield, Rabbit, Turtle, HelpCircle } from 'lucide-react'
 
-const icones = { CACHORRO: Dog, GATO: Cat, PASSARO: Bird }
+// Mapeamento completo de ícones sincronizado com o enum EspecieAnimal do Backend
+const icones = { 
+  CACHORRO: Dog, 
+  GATO: Cat, 
+  PASSARO: Bird,
+  EQUINO: Shield, // Substituído de Horse para Shield (evita erro de exportação do lucide-react)
+  ROEDOR: Rabbit,
+  REPTEIS: Turtle,
+  OUTRO: HelpCircle
+}
 
-// Mostra a foto do animal. Se não houver foto (ou ela falhar ao carregar),
-// mostra uma ilustração fixa. Assim a imagem nunca aparece quebrada nem muda sozinha.
+/**
+ * Componente unificado para exibição de fotos de animais e publicações.
+ * Se a foto falhar ao carregar ou estiver ausente, exibe um placeholder estilizado 
+ * com ícone dinâmico baseado na espécie do animal.
+ */
 export default function FotoAnimal({ animal, className = 'h-48 w-full' }) {
-  // guarda QUAL endereço falhou: se a foto for trocada, tenta carregar a nova
   const [urlComErro, setUrlComErro] = useState(null)
-  const falhou = urlComErro === animal.fotoUrl
+  
+  // Extrai a URL considerando propriedades diretas ou aninhadas
+  const fotoUrl = animal?.fotoUrl || animal?.animalFotoUrl || ''
+  const nome = animal?.nome || animal?.titulo || 'Animal'
+  const especie = animal?.especie || animal?.especieAnimal || 'CACHORRO'
 
-  if (animal.fotoUrl && !falhou) {
+  const falhou = urlComErro === fotoUrl
+
+  if (fotoUrl && !falhou) {
     return (
       <img
-        src={animal.fotoUrl}
-        alt={`Foto de ${animal.nome}`}
+        src={fotoUrl}
+        alt={`Foto de ${nome}`}
         loading="lazy"
-        onError={() => setUrlComErro(animal.fotoUrl)}
+        onError={() => setUrlComErro(fotoUrl)}
         className={`${className} bg-stone-100 object-cover`}
       />
     )
   }
 
-  const Icone = icones[animal.especieAnimal] ?? Dog
+  const Icone = icones[especie] ?? Dog
+
   return (
     <div
       role="img"
-      aria-label={`Sem foto de ${animal.nome}`}
-      className={`${className} flex flex-col items-center justify-center gap-1 bg-gradient-to-br from-green-50 to-amber-50 text-green-700/70`}
+      aria-label={`Sem foto de ${nome}`}
+      className={`${className} flex flex-col items-center justify-center gap-1 bg-gradient-to-br from-emerald-50 to-amber-50 text-emerald-700/70 p-4`}
     >
-      <Icone className="h-1/3 max-h-20 min-h-8 w-auto" strokeWidth={1.5} />
+      <Icone className="h-10 w-10 shrink-0 stroke-[1.5]" />
       <span className="text-xs font-medium text-stone-400">Sem foto</span>
     </div>
   )

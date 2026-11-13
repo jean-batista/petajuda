@@ -11,66 +11,63 @@ export default function Home() {
   const navigate = useNavigate()
   const { exigirLogin } = useAuth()
 
-  // estado da tela: o que o usuário escolheu e o que veio do service
   const [filtros, setFiltros] = useState({ tipoPublicacao: '', especie: '', porte: '', cidade: '' })
   const [busca, setBusca] = useState('')
   const [publicacoes, setPublicacoes] = useState([])
   const [carregando, setCarregando] = useState(true)
 
-  // toda vez que os filtros mudam, pede a lista de novo ao service.
-  // "ativo" evita que uma resposta antiga (mais lenta) sobrescreva a mais nova.
   useEffect(() => {
     let ativo = true
     setCarregando(true)
     listarPublicacoes({ ...filtros, status: 'ATIVO' }).then((lista) => {
       if (!ativo) return
-      setPublicacoes(lista)
+      setPublicacoes(lista || [])
       setCarregando(false)
+    }).catch(() => {
+      if (ativo) {
+        setPublicacoes([])
+        setCarregando(false)
+      }
     })
     return () => { ativo = false }
   }, [filtros])
 
-  // muda só um campo do objeto de filtros, mantendo os outros
   function alterarFiltro(campo, valor) {
     setFiltros({ ...filtros, [campo]: valor })
   }
 
   function publicar() {
-    // visitante pode navegar à vontade; o login só é pedido aqui
     if (exigirLogin('/acoes', { aba: 'nova' })) navigate('/acoes', { state: { aba: 'nova' } })
   }
 
-  // a busca por texto é feita aqui na tela, por nome do animal ou título
   const termo = busca.trim().toLowerCase()
   const visiveis = publicacoes.filter(
-    (p) => p.titulo.toLowerCase().includes(termo) || p.animal.nome.toLowerCase().includes(termo)
+    (p) => (p.titulo?.toLowerCase() || '').includes(termo) || (p.animal?.nome?.toLowerCase() || '').includes(termo)
   )
 
   const pill = (ativo) =>
     `rounded-full border px-4 py-2 text-sm font-semibold transition ${
-      ativo ? 'border-green-700 bg-green-700 text-white' : 'border-stone-300 bg-white hover:bg-stone-100'
+      ativo ? 'border-emerald-700 bg-emerald-700 text-white' : 'border-stone-300 bg-white hover:bg-stone-100 text-stone-700'
     }`
 
   return (
     <div className="flex flex-col gap-8">
-      {/* apresentação */}
-      <section className="rounded-3xl bg-green-700 px-6 py-10 text-white sm:px-10">
-        <p className="font-medium text-green-200">Região da AMUREL · SC</p>
+      <section className="rounded-3xl bg-emerald-700 px-6 py-10 text-white sm:px-10 shadow-sm">
+        <p className="font-medium text-emerald-200">Região da AMUREL · SC</p>
         <h1 className="mt-2 max-w-xl text-3xl font-bold sm:text-4xl">
           Ajude um animal a voltar para casa ou a encontrar uma família.
         </h1>
-        <p className="mt-3 max-w-xl text-green-100">
+        <p className="mt-3 max-w-xl text-emerald-100">
           Animais perdidos, encontrados e para adoção em Tubarão e região, reunidos num só lugar.
         </p>
         <button
           onClick={publicar}
-          className="mt-6 inline-flex items-center gap-2 rounded-xl bg-white px-5 py-3 font-semibold text-green-800 transition hover:bg-green-50"
+          className="mt-6 inline-flex items-center gap-2 rounded-xl bg-white px-5 py-3 font-semibold text-emerald-800 transition hover:bg-emerald-50 shadow-sm"
         >
           <PlusCircle className="h-5 w-5" /> Publicar um animal
         </button>
       </section>
 
-      {/* filtros */}
       <section className="flex flex-col gap-4">
         <div className="flex flex-wrap gap-2">
           <button onClick={() => alterarFiltro('tipoPublicacao', '')} className={pill(filtros.tipoPublicacao === '')}>
@@ -107,7 +104,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* resultado */}
       <section>
         {carregando ? (
           <Carregando texto="Carregando animais..." />

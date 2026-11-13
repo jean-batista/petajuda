@@ -21,8 +21,6 @@ public record PublicacaoResponse(
     String usuarioNome,
     String usuarioTelefone,
 
-    UUID animalId,
-    String animalNome,
-    String animalFotoUrl
+    AnimalResponse animal
 ) {
 }

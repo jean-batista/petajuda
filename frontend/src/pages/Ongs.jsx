@@ -3,10 +3,10 @@ import { MapPin, Check, CalendarDays, HeartHandshake, MessageCircle, PawPrint, B
 import { listarOngs, listarCampanhas, listarAnimaisDaOng } from '../services/ongService'
 import { CIDADES_AMUREL } from '../data/enums'
 import { copiarTexto, formatarData, formatarCnpj, linkWhatsApp } from '../utils/format'
-import { useToast } from '../components/Toast'
-import Modal from '../components/Modal'
-import PublicacaoCard from '../components/PublicacaoCard'
-import { Carregando, Vazio, inputClasse, botaoPrimario, botaoSecundario } from '../components/ui'
+import { useToast } from '../context/ToastContext'
+import Modal from '../components/ui/Modal'
+import PublicacaoCard from '../components/ui/PublicacaoCard'
+import { Carregando, Vazio, inputClasse, botaoPrimario, botaoSecundario } from '../components/ui/Ui'
 
 function BoxPix({ chave }) {
   const toast = useToast()

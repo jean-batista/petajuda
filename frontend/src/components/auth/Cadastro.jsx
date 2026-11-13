@@ -1,12 +1,12 @@
 import { useState } from 'react'
 import { useAuth } from '../../context/AuthContext'
 import { CIDADES_AMUREL } from '../../data/enums'
-import { formatarTelefone, somenteDigitos } from '../../utils/format'
-import Modal from '../Modal'
-import { botaoPrimario, Campo, inputClasse } from '../ui'
-import { LinkModal } from "../LinkModal"
-import { emailValido } from '../../utils/emailValidator'
 import { cadastrarUsuario } from "../../services/authService"
+import { formatarTelefone, somenteDigitos } from '../../utils/format'
+import { validarEmail } from '../../utils/validators'
+import { LinkModal } from "../ui/LinkModal"
+import Modal from '../ui/Modal'
+import { botaoPrimario, Campo, inputClasse } from '../ui/Ui'
 
 export function Cadastro() {
   const { cadastrar, abrirModal, fecharModal } = useAuth()
@@ -30,7 +30,7 @@ export function Cadastro() {
     const e = {}
     if (!f.nome.trim()) e.nome = 'Informe seu nome.'
     if (!f.sobrenome.trim()) e.sobrenome = 'Informe seu sobrenome.'
-    if (!emailValido(f.email)) e.email = 'Informe um e-mail válido.'
+    if (!validarEmail(f.email)) e.email = 'Informe um e-mail válido.'
     if (somenteDigitos(f.telefone).length < 10) e.telefone = 'Informe DDD e número válido.'
     if (!f.nascimento) e.nascimento = 'Informe sua data de nascimento.'
     if (!f.cidade.trim()) e.cidade = 'Selecione sua cidade.'

@@ -1,10 +1,9 @@
 import { Eye, EyeOff } from 'lucide-react'
 import { useState } from 'react'
 import { useAuth } from '../../context/AuthContext'
-import Modal from '../Modal'
-import { botaoPrimario, Campo, inputClasse } from '../ui'
-import { LinkModal } from "../LinkModal"
-import { login } from '../../services/authService'
+import { LinkModal } from "../ui/LinkModal"
+import Modal from '../ui/Modal'
+import { botaoPrimario, Campo, inputClasse } from '../ui/Ui'
 
 export function Login() {
   const { entrar, abrirModal, fecharModal } = useAuth()

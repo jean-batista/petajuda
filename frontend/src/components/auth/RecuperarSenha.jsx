@@ -2,10 +2,10 @@ import { MailCheck } from 'lucide-react'
 import { useState } from 'react'
 import { useAuth } from '../../context/AuthContext'
 import * as authService from '../../services/authService'
-import Modal from '../Modal'
-import { botaoPrimario, Campo, inputClasse } from '../ui'
-import { LinkModal } from "../LinkModal"
-import { emailValido } from '../../utils/emailValidator'
+import Modal from '../ui/Modal'
+import { botaoPrimario, Campo, inputClasse } from '../ui/Ui'
+import { LinkModal } from "../ui/LinkModal"
+import { validarEmail } from '../../utils/validators'
 import { recuperarSenha } from '../../services/authService'
 
 export function RecuperarSenha() {
@@ -17,7 +17,7 @@ export function RecuperarSenha() {
 
   async function enviar(ev) {
     ev.preventDefault()
-    if (!emailValido(email)) return setErro('Informe um e-mail válido.')
+    if (!validarEmail(email)) return setErro('Informe um e-mail válido.')
     setErro('')
     setEnviando(true)
     await authService.recuperarSenha(email)

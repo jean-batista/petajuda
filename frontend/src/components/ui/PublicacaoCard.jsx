@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom'
 import { MapPin, CalendarDays } from 'lucide-react'
-import { TIPO_PUBLICACAO, ESPECIE_ANIMAL, PORTE_ANIMAL } from '../data/enums'
-import { formatarData } from '../utils/format'
+import { TIPO_PUBLICACAO, ESPECIE_ANIMAL, PORTE_ANIMAL } from '../../data/enums'
+import { formatarData } from '../../utils/format'
 import FotoAnimal from './FotoAnimal'
 
 // Card de uma publicação/animal no feed. Recebe a publicação por "props".

@@ -2,11 +2,10 @@ import { useState } from 'react'
 import { useAuth } from '../../context/AuthContext'
 import { CIDADES_AMUREL } from '../../data/enums'
 import { formatarCnpj, formatarTelefone, somenteDigitos } from '../../utils/format'
-import Modal from '../Modal'
-import { botaoPrimario, botaoSecundario, Campo, inputClasse } from '../ui'
-import { LinkModal } from "../LinkModal"
-import { emailValido } from '../../utils/emailValidator'
-import { cadastrarOng } from '../../services/authService'
+import { validarEmail } from '../../utils/validators'
+import { LinkModal } from "../ui/LinkModal"
+import Modal from '../ui/Modal'
+import { botaoPrimario, botaoSecundario, Campo, inputClasse } from '../ui/Ui'
 
 export function CadastroInstitucional() {
   const { cadastrarOng, abrirModal, fecharModal } = useAuth()
@@ -22,7 +21,7 @@ export function CadastroInstitucional() {
     const e = {}
     if (!r.nome.trim()) e.nome = 'Informe o nome.'
     if (!r.sobrenome.trim()) e.sobrenome = 'Informe o sobrenome.'
-    if (!emailValido(r.email)) e.email = 'Informe um e-mail válido.'
+    if (!validarEmail(r.email)) e.email = 'Informe um e-mail válido.'
     if (somenteDigitos(r.telefone).length < 10) e.telefone = 'Informe DDD e número.'
     if (!r.nascimento) e.nascimento = 'Informe sua data de nascimento.'
     if (r.senha.length < 8) e.senha = 'Mínimo de 8 caracteres.'

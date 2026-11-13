@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { NavLink, Link } from 'react-router-dom'
 import { House, HeartHandshake, LayoutDashboard, LogIn, LogOut, ChevronDown } from 'lucide-react'
-import { useAuth } from '../context/AuthContext'
-import { PERFIL } from '../data/enums'
+import { useAuth } from '../../context/AuthContext'
+import { PERFIL } from '../../data/enums'
 
 // Os itens do menu ficam num array e o HTML é gerado com .map()
 const links = [

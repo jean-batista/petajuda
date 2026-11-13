@@ -4,12 +4,12 @@
  * Comunica-se com animalService.js via multipart/form-data.
  */
 
+import { PawPrint, Upload, X } from 'lucide-react'
 import { useState } from 'react'
-import { Upload, X, PawPrint } from 'lucide-react'
-import { Campo, inputClasse, botaoPrimario, botaoSecundario } from '../ui'
-import { ESPECIE_ANIMAL, PORTE_ANIMAL, IDADE_ANIMAL, SEXO_ANIMAL } from '../../data/enums'
-import { criarAnimal, atualizarAnimal } from '../../services/animalService'
-import { useToast } from '../Toast'
+import { useToast } from '../../../context/ToastContext'
+import { ESPECIE_ANIMAL, IDADE_ANIMAL, PORTE_ANIMAL, SEXO_ANIMAL } from '../../../data/enums'
+import { atualizarAnimal, criarAnimal } from '../../../services/animalService'
+import { botaoPrimario, botaoSecundario, Campo, inputClasse } from '../../ui/Ui'
 
 function valoresIniciais(animal) {
   return {

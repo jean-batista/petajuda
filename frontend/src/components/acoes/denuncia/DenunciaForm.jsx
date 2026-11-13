@@ -4,13 +4,13 @@
  * Utiliza denunciaService.
  */
 
+import { CheckCircle2, Search, ShieldCheck, Upload, X } from 'lucide-react'
 import { useState } from 'react'
-import { ShieldCheck, Upload, X, CheckCircle2, Search } from 'lucide-react'
-import { Campo, Selo, inputClasse, botaoPrimario, botaoSecundario } from '../ui'
-import { STATUS_DENUNCIA } from '../../data/enums'
-import { formatarData, copiarTexto } from '../../utils/format'
-import { criarDenuncia, consultarDenuncia } from '../../services/denunciaService'
-import { useToast } from '../Toast'
+import { useToast } from '../../../context/ToastContext'
+import { STATUS_DENUNCIA } from '../../../data/enums'
+import { consultarDenuncia, criarDenuncia } from '../../../services/denunciaService'
+import { copiarTexto, formatarData } from '../../../utils/format'
+import { Campo, Selo, botaoPrimario, botaoSecundario, inputClasse } from '../../ui/Ui'
 
 const vazio = { descricao: '', cidade: '', bairro: '', rua: '', complemento: '' }
 

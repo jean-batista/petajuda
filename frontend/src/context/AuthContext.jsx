@@ -1,3 +1,9 @@
+/**
+ * @file AuthContext.jsx
+ * @description Contexto global de autenticação do Pet Ajuda.
+ * Segue o fluxo: Tela/Componente -> AuthContext -> AuthService -> API.
+ */
+
 import { createContext, useCallback, useContext, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import * as authService from '../services/authService'
@@ -61,7 +67,7 @@ export function AuthProvider({ children }) {
     return usuarioNormalizado
   }, [limparSessaoLocal])
 
-  // Restaura a sessão validando o token JWT salvo com a API
+  // Restaura a sessão validando o token JWT salvo com a API via authService
   useEffect(() => {
     let ativo = true
 
@@ -83,13 +89,14 @@ export function AuthProvider({ children }) {
         return
       }
 
-      // Hidrata imediatamente com o cache para evitar flash de deslogado
+      // Hidrata imediatamente com o cache para evitar flash de tela em branco
       if (cacheUsuario && ativo) {
         setUsuario(normalizarUsuario(cacheUsuario))
       }
 
       try {
-        const perfilAtualizado = await authService.obterPerfilLogado(cacheUsuario?.id)
+        // Chama o authService para validar o token no endpoint /usuarios/me
+        const perfilAtualizado = await authService.obterPerfilLogado()
         if (ativo) {
           if (perfilAtualizado) {
             guardarSessao(perfilAtualizado)
@@ -155,9 +162,10 @@ export function AuthProvider({ children }) {
     abrirModal,
     fecharModal,
     exigirLogin,
+    // Integração direta com o authService seguindo o padrão estabelecido:
     entrar: async (email, senha) => concluirAcesso(await authService.login(email, senha)),
-    cadastrar: async (dados) => concluirAcesso(await authService.registrar(dados)),
-    cadastrarOng: async (dados) => concluirAcesso(await authService.registrarOng(dados), '/acoes'),
+    cadastrar: async (dados) => concluirAcesso(await authService.cadastrarUsuario(dados)),
+    cadastrarOng: async (dados) => concluirAcesso(await authService.cadastrarOng(dados), '/acoes'),
     sair,
     atualizarUsuario,
   }

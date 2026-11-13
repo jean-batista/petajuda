@@ -4,18 +4,18 @@
  * Utiliza publicacaoService.
  */
 
+import { CheckCircle2, Eye, FileText, Pencil, PlusCircle, RotateCcw, Trash2 } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Pencil, Trash2, CheckCircle2, RotateCcw, Eye, PlusCircle, FileText } from 'lucide-react'
-import { listarPublicacoesDoAutor, alterarStatusPublicacao, excluirPublicacao } from '../../services/publicacaoService'
-import { TIPO_PUBLICACAO, STATUS_PUBLICACAO, ROTULO_RESOLVIDO } from '../../data/enums'
-import { formatarData } from '../../utils/format'
-import FotoAnimal from '../FotoAnimal'
-import Modal from '../Modal'
-import ConfirmarModal from '../ConfirmarModal'
-import PublicacaoForm from './PublicacaoForm'
-import { Carregando, Selo, Vazio, botaoPrimario } from '../ui'
-import { useToast } from '../Toast'
+import { useToast } from '../../../context/ToastContext'
+import { ROTULO_RESOLVIDO, STATUS_PUBLICACAO, TIPO_PUBLICACAO } from '../../../data/enums'
+import { alterarStatusPublicacao, excluirPublicacao, listarPublicacoesDoAutor } from '../../../services/publicacaoService'
+import { formatarData } from '../../../utils/format'
+import PublicacaoForm from '../publicacao/PublicacaoForm'
+import { Carregando, Selo, Vazio, botaoPrimario } from '../../ui/Ui'
+import ConfirmarModal from '../../ui/ConfirmarModal'
+import FotoAnimal from '../../ui/FotoAnimal'
+import Modal from '../../ui/Modal'
 
 const botaoAcao = 'inline-flex items-center gap-1 rounded-lg border border-stone-200 px-2.5 py-1.5 text-xs font-semibold hover:bg-stone-100 transition-colors'
 

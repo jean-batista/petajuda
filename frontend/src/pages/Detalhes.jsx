@@ -1,12 +1,11 @@
+import { ArrowLeft, CalendarDays, Check, MapPin, MessageCircle, User, X } from 'lucide-react'
 import { useEffect, useState } from 'react'
-import { useParams, Link } from 'react-router-dom'
-import { ArrowLeft, MapPin, MessageCircle, Check, X, User, CalendarDays } from 'lucide-react'
+import { Link, useParams } from 'react-router-dom'
+import FotoAnimal from '../components/ui/FotoAnimal'
+import { Carregando, Selo } from '../components/ui/Ui'
+import { ESPECIE, IDADE, PORTE, SEXO, TIPO_PUBLICACAO } from '../data/enums'
 import { buscarPublicacao } from '../services/publicacaoService'
-import { TIPO_PUBLICACAO, ESPECIE, PORTE, IDADE, SEXO } from '../data/enums'
 import { formatarData, linkWhatsApp } from '../utils/format'
-import FotoAnimal from '../components/FotoAnimal'
-import { Carregando, Selo } from '../components/ui'
-import { buscarAnimal } from '../services/animalService'
 
 const Sim = () => <Check className="h-5 w-5 text-emerald-600" aria-label="Sim" />
 const Nao = () => <X className="h-5 w-5 text-rose-500" aria-label="Não" />

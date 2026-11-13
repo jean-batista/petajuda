@@ -1,19 +1,31 @@
+import {
+  Ban,
+  BarChart3, Building2,
+  FileText,
+  Gavel,
+  Hourglass,
+  LogIn,
+  Megaphone,
+  PawPrint,
+  PlusCircle, ShieldAlert, UserCog,
+  UserPlus,
+} from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useLocation } from 'react-router-dom'
-import {
-  FileText, PlusCircle, ShieldAlert, UserCog, Megaphone, BarChart3, Building2, Gavel, LogIn, UserPlus, Hourglass, Ban, PawPrint,
-} from 'lucide-react'
+import { AdminDenuncias } from "../components/acoes/admin/AdminDenuncias"
+import { AdminMetricas } from "../components/acoes/admin/AdminMetricas"
+import { AdminModeracao } from "../components/acoes/admin/AdminModeracao"
+import { AdminOngs } from "../components/acoes/admin/AdminOngs"
+import { CampanhasOng } from '../components/acoes/campanhas/CampanhasOng'
+import DenunciaForm from '../components/acoes/denuncia/DenunciaForm'
+import PublicacaoForm from '../components/acoes/publicacao/PublicacaoForm'
+import MeuPerfil from '../components/acoes/usuario/MeuPerfil'
+import MeusAnimais from '../components/acoes/usuario/MeusAnimais'
+import MinhasPublicacoes from '../components/acoes/usuario/MinhasPublicacoes'
+import { Carregando } from '../components/ui/Ui'
 import { useAuth } from '../context/AuthContext'
 import { PERFIL } from '../data/enums'
 import { buscarOng } from '../services/ongService'
-import { Carregando } from '../components/ui'
-import MinhasPublicacoes from '../components/acoes/MinhasPublicacoes'
-import PublicacaoForm from '../components/acoes/PublicacaoForm'
-import MeusAnimais from '../components/acoes/MeusAnimais'
-import DenunciaForm from '../components/acoes/DenunciaForm'
-import CampanhasOng from '../components/acoes/CampanhasOng'
-import MeuPerfil from '../components/acoes/MeuPerfil'
-import { AdminMetricas, AdminDenuncias, AdminOngs, AdminModeracao } from '../components/acoes/Admin'
 
 const ABAS = {
   VISITANTE: [

@@ -1,6 +1,6 @@
 import { Outlet, useLocation } from 'react-router-dom'
 import { useEffect } from 'react'
-import Navbar from '../components/Navbar'
+import Navbar from '../components/ui/Navbar'
 import AuthModals from '../components/auth/AuthModals'
 
 // moldura de todas as páginas: Navbar em cima, rodapé embaixo

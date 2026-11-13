@@ -1,1 +1,0 @@
-export const emailValido = (v) => /^\S+@\S+\.\S+$/.test(v)

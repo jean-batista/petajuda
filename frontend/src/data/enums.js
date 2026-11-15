@@ -65,3 +65,11 @@ export const PERFIL = {
     ONG: 'ONG / Protetor',
     ADMIN: 'Administrador',
 }
+
+export const METHOD_TYPE = {
+    GET: 'GET',
+    POST: 'POST',
+    PUT: 'PUT',
+    PATCH: 'PATCH',
+    DELETE: 'DELETE'
+}

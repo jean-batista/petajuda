@@ -1,98 +1,47 @@
 /**
  * @file animalService.js
  * @description Serviço de integração frontend para gerenciamento de animais no Pet Ajuda.
- * Alinhado com os endpoints do Swagger (/api/v1/animais).
  */
+import { api } from '../api/api'
+import { METHOD_TYPE } from '../data/enums'
 
-const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api/v1'
-
-const getHeaders = () => {
-  const token = localStorage.getItem('petajuda_token')
-  return {
-    'Content-Type': 'application/json',
-    ...(token ? { Authorization: `Bearer ${token}` } : {})
-  }
-}
-
-async function tratarErroResponse(res, mensagemPadrao) {
-  try {
-    const errorData = await res.json()
-    throw new Error(errorData.detail || errorData.message || mensagemPadrao)
-  } catch (err) {
-    if (err.message && err.message !== mensagemPadrao) throw err
-    throw new Error(mensagemPadrao)
-  }
-}
-
-/**
- * Lista os animais do utilizador autenticado (GET /api/v1/animais/meus-animais)
- */
 export async function listarMeusAnimais() {
-  const res = await fetch(`${BASE_URL}/animais/meus-animais`, {
-    headers: getHeaders()
-  })
-  if (!res.ok) await tratarErroResponse(res, 'Falha ao carregar os seus animais.')
-  return await res.json()
+  return await api('/animais/meus-animais', {}, 'Falha ao carregar os seus animais.')
 }
 
-/**
- * Lista os animais de um utilizador específico (GET /api/v1/animais/usuario/{usuarioId})
- */
 export async function listarAnimaisPorUsuario(usuarioId) {
-  const res = await fetch(`${BASE_URL}/animais/usuario/${usuarioId}`, {
-    headers: getHeaders()
-  })
-  if (!res.ok) await tratarErroResponse(res, 'Falha ao listar animais do utilizador.')
-  return await res.json()
+  return await api(`/animais/usuario/${usuarioId}`, {}, 'Falha ao listar animais do utilizador.')
 }
 
-/**
- * Busca os detalhes de um animal específico pelo ID (GET /api/v1/animais/{id})
- */
 export async function buscarAnimal(id) {
-  const res = await fetch(`${BASE_URL}/animais/${id}`, {
-    headers: getHeaders()
-  })
-  if (!res.ok) await tratarErroResponse(res, 'Falha ao buscar detalhes do animal.')
-  return await res.json()
+  return await api(`/animais/${id}`, {}, 'Falha ao buscar detalhes do animal.')
 }
 
-/**
- * Cadastra um novo animal via multipart/form-data (POST /api/v1/animais)
- */
 export async function criarAnimal(formData) {
-  const token = localStorage.getItem('petajuda_token')
-  const res = await fetch(`${BASE_URL}/animais`, {
-    method: 'POST',
-    headers: {
-      ...(token ? { Authorization: `Bearer ${token}` } : {})
-    },
+  return await api('/animais', {
+    method: METHOD_TYPE.POST,
     body: formData
-  })
-  if (!res.ok) await tratarErroResponse(res, 'Falha ao cadastrar o animal.')
-  return await res.json()
+  }, 'Falha ao cadastrar o animal.')
 }
 
-/**
- * Atualiza os dados cadastrais da ficha de um animal (PUT /api/v1/animais/{id})
- */
 export async function atualizarAnimal(id, dados) {
-  const res = await fetch(`${BASE_URL}/animais/${id}`, {
-    method: 'PUT',
-    headers: getHeaders(),
-    body: JSON.stringify(dados)
-  })
-  if (!res.ok) await tratarErroResponse(res, 'Falha ao atualizar dados do animal.')
-  return await res.json()
+  return await api(`/animais/${id}`, {
+    method: METHOD_TYPE.PUT,
+    body: dados
+  }, 'Falha ao atualizar dados do animal.')
 }
 
-/**
- * Exclui a ficha de um animal (DELETE /api/v1/animais/{id})
- */
 export async function excluirAnimal(id) {
-  const res = await fetch(`${BASE_URL}/animais/${id}`, {
-    method: 'DELETE',
-    headers: getHeaders()
+  return await api(`/animais/${id}`, {
+    method: METHOD_TYPE.DELETE
+  }, 'Falha ao excluir o animal.')
+}
+
+export async function listarAnimais(filtros = {}) {
+  const params = new URLSearchParams()
+  Object.entries(filtros).forEach(([key, value]) => {
+    if (value) params.append(key, value)
   })
-  if (!res.ok) await tratarErroResponse(res, 'Falha ao excluir o animal.')
+  const query = params.toString() ? `?${params.toString()}` : ''
+  return await api(`/animais${query}`, {}, 'Falha ao listar animais.')
 }

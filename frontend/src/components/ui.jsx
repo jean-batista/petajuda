@@ -43,6 +43,16 @@ export function Carregando({ texto = 'Carregando...' }) {
   )
 }
 
+// botão que mostra um círculo girando enquanto a ação está em andamento
+export function BotaoCarregando({ carregando, textoCarregando = 'Enviando...', children, className = botaoPrimario, ...props }) {
+  return (
+    <button {...props} disabled={carregando || props.disabled} aria-busy={carregando} className={className}>
+      {carregando && <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />}
+      {carregando ? textoCarregando : children}
+    </button>
+  )
+}
+
 export function Vazio({ icone: Icone, titulo, texto, children }) {
   return (
     <div className="flex flex-col items-center gap-2 rounded-2xl border border-dashed border-stone-300 bg-white px-6 py-10 text-center">

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { ShieldCheck, Upload, X, CheckCircle2, Search } from 'lucide-react'
-import { Campo, Selo, inputClasse, botaoPrimario, botaoSecundario } from '../ui'
-import { CIDADES, STATUS_DENUNCIA } from '../../data/enums'
+import { Campo, Selo, BotaoCarregando, inputClasse, botaoSecundario } from '../ui'
+import { CIDADES, STATUS_DENUNCIA, mensagemDeErro } from '../../data/enums'
 import { lerImagem, formatarData, copiarTexto } from '../../utils/format'
 import { criarDenuncia, consultarDenuncia } from '../../services/denunciaService'
 import { useToast } from '../Toast'
@@ -61,13 +61,18 @@ export default function DenunciaForm() {
     setErros(e)
     if (Object.keys(e).length) return
     setEnviando(true)
-    const denuncia = await criarDenuncia({
-      descricao: f.descricao.trim(), fotoUrl: f.fotoUrl,
-      endereco: { cidade: f.cidade, bairro: f.bairro.trim(), rua: f.rua.trim(), complemento: f.complemento.trim() },
-    })
-    setEnviando(false)
-    setProtocolo(denuncia.id)
-    setF(vazio)
+    try {
+      const denuncia = await criarDenuncia({
+        descricao: f.descricao.trim(), fotoUrl: f.fotoUrl,
+        endereco: { cidade: f.cidade, bairro: f.bairro.trim(), rua: f.rua.trim(), complemento: f.complemento.trim() },
+      })
+      setProtocolo(denuncia.id)
+      setF(vazio)
+    } catch (err) {
+      toast.erro(mensagemDeErro(err))
+    } finally {
+      setEnviando(false)
+    }
   }
 
   if (protocolo) {
@@ -125,7 +130,7 @@ export default function DenunciaForm() {
           )}
         </div>
 
-        <button type="submit" disabled={enviando} className={botaoPrimario}>{enviando ? 'Enviando...' : 'Enviar denúncia anônima'}</button>
+        <BotaoCarregando type="submit" carregando={enviando} textoCarregando={f.fotoUrl ? 'Enviando foto...' : 'Enviando...'}>Enviar denúncia anônima</BotaoCarregando>
       </form>
 
       <Acompanhar />

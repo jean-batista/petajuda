@@ -72,7 +72,7 @@ export function AdminDenuncias() {
   }
 
   if (lista === null) return <Carregando />
-  if (lista.length === 0) return <Vazio icone={ShieldAlert} titulo="Nenhuma denúncia registrada" />
+  if (lista.length === 0) return <Vazio icone={ShieldAlert} titulo="Nenhuma denúncia registrada" texto="Quando alguém enviar uma denúncia anônima pela Central de Ações, ela aparece aqui para triagem." />
 
   return (
     <>
@@ -245,7 +245,7 @@ export function AdminModeracao() {
               </div>
             </li>
           ))}
-          {pubs.length === 0 && <p className="text-sm text-stone-500">Nenhuma publicação encontrada.</p>}
+          {pubs.length === 0 && <Vazio icone={FileText} titulo="Nenhuma publicação encontrada" texto={busca ? 'Nenhum resultado para essa busca. Tente outro termo.' : 'Ainda não há publicações na plataforma.'} />}
         </ul>
       ) : (
         <div className="overflow-x-auto rounded-2xl border border-stone-200 bg-white">
@@ -269,6 +269,9 @@ export function AdminModeracao() {
                   </td>
                 </tr>
               ))}
+              {users.length === 0 && (
+                <tr><td colSpan={5} className="px-4 py-8 text-center text-stone-500">Nenhum usuário encontrado para essa busca.</td></tr>
+              )}
             </tbody>
           </table>
         </div>

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Upload, X } from 'lucide-react'
-import { Campo, inputClasse, botaoPrimario, botaoSecundario } from '../ui'
-import { TIPO_PUBLICACAO, ESPECIE, PORTE, IDADE, SEXO, CIDADES } from '../../data/enums'
+import { Campo, BotaoCarregando, inputClasse, botaoPrimario, botaoSecundario } from '../ui'
+import { TIPO_PUBLICACAO, ESPECIE, PORTE, IDADE, SEXO, CIDADES, mensagemDeErro } from '../../data/enums'
 import { lerImagem } from '../../utils/format'
 import { criarPublicacao, atualizarPublicacao } from '../../services/publicacaoService'
 import { useToast } from '../Toast'
@@ -97,7 +97,7 @@ export default function PublicacaoForm({ usuario, publicacao, onSalvo, onCancela
       toast.sucesso(publicacao ? 'Publicação atualizada!' : 'Publicação criada! Ela já aparece no feed.')
       onSalvo?.(salva)
     } catch (err) {
-      toast.erro(err.message)
+      toast.erro(mensagemDeErro(err))
       setEnviando(false)
     }
   }
@@ -202,9 +202,9 @@ export default function PublicacaoForm({ usuario, publicacao, onSalvo, onCancela
         {etapa === 1 ? (
           <button type="button" onClick={avancar} className={botaoPrimario}>Próxima etapa</button>
         ) : (
-          <button type="submit" disabled={enviando} className={botaoPrimario}>
-            {enviando ? 'Salvando...' : publicacao ? 'Salvar alterações' : 'Publicar'}
-          </button>
+          <BotaoCarregando type="submit" carregando={enviando} textoCarregando={f.fotoUrl ? 'Enviando foto...' : 'Salvando...'}>
+            {publicacao ? 'Salvar alterações' : 'Publicar'}
+          </BotaoCarregando>
         )}
       </div>
     </form>

@@ -101,6 +101,23 @@ export const publicacoes = [
         endereco: { estado: 'SC', cidade: 'Gravatal', bairro: 'Termas', rua: 'SC-370', complemento: 'Próximo ao posto' },
         autor: { usuarioId: 'u6', nome: 'Rafael Costa', telefone: '48999990005', exibirTelefone: true },
     },
+    {
+        id: 'p7',
+        titulo: 'Coelhinha Nina para adoção responsável',
+        descricao: 'Resgatada de um terreno baldio. Muito dócil, já acostumada com feno e verduras.',
+        tipoPublicacao: 'ADOCAO',
+        status: 'ATIVO',
+        data: '2026-11-04T11:00:00',
+        animal: {
+            id: 'a7', nome: 'Nina', sexo: 'FEMEA', corPredominante: 'Branco e cinza',
+            castrado: false, vacinado: false,
+            descricao: 'Pequena, calma, gosta de carinho atrás das orelhas.',
+            fotoUrl: '',
+            idadeAnimal: 'ADULTO', porteAnimal: 'PEQUENO', especieAnimal: 'ROEDOR',
+        },
+        endereco: { estado: 'SC', cidade: 'Laguna', bairro: 'Mar Grosso', rua: 'Rua Senador Galotti', complemento: '' },
+        autor: { usuarioId: 'u7', nome: 'Abrigo Amigo Fiel', telefone: '48999990006', exibirTelefone: true, ongId: 'o2' },
+    },
 ]
 
 export const ongs = [

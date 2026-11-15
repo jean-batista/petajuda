@@ -112,7 +112,11 @@ export default function Home() {
         {carregando ? (
           <Carregando texto="Carregando animais..." />
         ) : visiveis.length === 0 ? (
-          <Vazio icone={SearchX} titulo="Nenhum animal encontrado" texto="Tente mudar os filtros ou buscar em outra cidade da região." />
+          <Vazio icone={SearchX} titulo="Nenhum animal encontrado" texto="Tente mudar os filtros ou buscar em outra cidade. Se você perdeu ou encontrou um animal, publique e ajude outras pessoas a acharem.">
+            <button onClick={publicar} className="mt-2 inline-flex items-center gap-2 rounded-xl bg-green-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-green-700">
+              <PlusCircle className="h-4 w-4" /> Publicar um animal
+            </button>
+          </Vazio>
         ) : (
           <>
             <p className="mb-4 text-sm text-stone-500">{visiveis.length} {visiveis.length === 1 ? 'animal' : 'animais'}</p>

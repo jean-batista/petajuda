@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Pencil, Trash2, CheckCircle2, RotateCcw, Eye, PlusCircle, FileText } from 'lucide-react'
 import { listarPublicacoesDoAutor, alterarStatusPublicacao, excluirPublicacao } from '../../services/publicacaoService'
-import { TIPO_PUBLICACAO, STATUS_PUBLICACAO, ROTULO_RESOLVIDO } from '../../data/enums'
+import { TIPO_PUBLICACAO, STATUS_PUBLICACAO, ROTULO_RESOLVIDO, mensagemDeErro } from '../../data/enums'
 import { formatarData } from '../../utils/format'
 import FotoAnimal from '../FotoAnimal'
 import Modal from '../Modal'
@@ -19,22 +19,37 @@ export default function MinhasPublicacoes({ usuario, onNova }) {
   const [lista, setLista] = useState(null)
   const [editando, setEditando] = useState(null)
   const [excluindo, setExcluindo] = useState(null)
+  const [ocupado, setOcupado] = useState(null) // id da publicação sendo processada
 
   const carregar = useCallback(() => listarPublicacoesDoAutor(usuario.id).then(setLista), [usuario.id])
   useEffect(() => { carregar() }, [carregar])
 
   async function alternarStatus(p) {
     const novo = p.status === 'ATIVO' ? 'RESOLVIDO' : 'ATIVO'
-    await alterarStatusPublicacao(p.id, novo)
-    toast.sucesso(novo === 'RESOLVIDO' ? 'Publicação encerrada. Que bom!' : 'Publicação reativada no feed.')
-    carregar()
+    setOcupado(p.id)
+    try {
+      await alterarStatusPublicacao(p.id, novo)
+      toast.sucesso(novo === 'RESOLVIDO' ? 'Publicação encerrada. Que bom!' : 'Publicação reativada no feed.')
+      await carregar()
+    } catch (err) {
+      toast.erro(mensagemDeErro(err))
+    } finally {
+      setOcupado(null)
+    }
   }
 
   async function confirmarExclusao() {
-    await excluirPublicacao(excluindo.id)
-    setExcluindo(null)
-    toast.sucesso('Publicação excluída.')
-    carregar()
+    setOcupado(excluindo.id)
+    try {
+      await excluirPublicacao(excluindo.id)
+      setExcluindo(null)
+      toast.sucesso('Publicação excluída.')
+      await carregar()
+    } catch (err) {
+      toast.erro(mensagemDeErro(err))
+    } finally {
+      setOcupado(null)
+    }
   }
 
   if (lista === null) return <Carregando />
@@ -47,12 +62,14 @@ export default function MinhasPublicacoes({ usuario, onNova }) {
       </div>
 
       {lista.length === 0 ? (
-        <Vazio icone={FileText} titulo="Você ainda não publicou nada" texto="Cadastre um animal perdido, encontrado ou para adoção." />
+        <Vazio icone={FileText} titulo="Você ainda não publicou nada" texto="Perdeu, encontrou ou quer doar um animal? Crie sua primeira publicação e ela aparece no feed na hora.">
+          <button onClick={onNova} className={`${botaoPrimario} mt-2`}><PlusCircle className="h-4 w-4" /> Criar primeira publicação</button>
+        </Vazio>
       ) : (
         <ul className="flex flex-col gap-3">
           {lista.map((p) => (
             <li key={p.id} className="flex flex-col gap-4 rounded-2xl border border-stone-200 bg-white p-4 sm:flex-row sm:items-center">
-              <FotoAnimal animal={p.animal} className="h-20 w-full shrink-0 rounded-xl sm:w-28" />
+              <FotoAnimal animal={p.animal} className="aspect-[4/3] w-full shrink-0 rounded-xl sm:w-28" />
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap gap-2">
                   <Selo classe={TIPO_PUBLICACAO[p.tipoPublicacao].classe}>{TIPO_PUBLICACAO[p.tipoPublicacao].label}</Selo>
@@ -63,7 +80,7 @@ export default function MinhasPublicacoes({ usuario, onNova }) {
               </div>
               <div className="flex flex-wrap gap-2">
                 <Link to={`/publicacoes/${p.id}`} className={botaoAcao}><Eye className="h-4 w-4" /> Ver</Link>
-                <button onClick={() => alternarStatus(p)} className={botaoAcao}>
+                <button onClick={() => alternarStatus(p)} disabled={ocupado === p.id} className={`${botaoAcao} disabled:opacity-50`}>
                   {p.status === 'ATIVO'
                     ? <><CheckCircle2 className="h-4 w-4 text-green-600" /> Marcar como {ROTULO_RESOLVIDO[p.tipoPublicacao]}</>
                     : <><RotateCcw className="h-4 w-4" /> Reativar</>}
@@ -84,7 +101,7 @@ export default function MinhasPublicacoes({ usuario, onNova }) {
       )}
       {excluindo && (
         <ConfirmarModal titulo="Excluir publicação?" texto={`"${excluindo.titulo}" será removida do feed. Esta ação não pode ser desfeita.`}
-          onConfirmar={confirmarExclusao} onFechar={() => setExcluindo(null)} />
+          onConfirmar={confirmarExclusao} onFechar={() => setExcluindo(null)} ocupado={ocupado === excluindo.id} />
       )}
     </div>
   )

@@ -12,7 +12,7 @@ export default function PublicacaoCard({ publicacao }) {
   return (
     <article className="flex flex-col overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-sm transition hover:shadow-md">
       <div className="relative">
-        <FotoAnimal animal={animal} className="h-48 w-full" />
+        <FotoAnimal animal={animal} className="aspect-[4/3] w-full" />
         <span className={`absolute left-3 top-3 rounded-full px-3 py-1 text-xs font-bold uppercase ${tipo.classe}`}>
           {tipo.label}
         </span>

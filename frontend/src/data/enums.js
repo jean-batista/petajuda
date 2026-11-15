@@ -4,7 +4,16 @@ export const TIPO_PUBLICACAO = {
     ADOCAO: { label: 'Adoção', classe: 'bg-sky-100 text-sky-700' },
 }
 
-export const ESPECIE = { CACHORRO: 'Cachorro', GATO: 'Gato', PASSARO: 'Pássaro' }
+// mesmos valores e rótulos do enum EspecieAnimal do backend
+export const ESPECIE = {
+    CACHORRO: 'Cachorro',
+    GATO: 'Gato',
+    PASSARO: 'Pássaro / Ave',
+    EQUINO: 'Equino (Cavalo / Pônei)',
+    ROEDOR: 'Roedor (Coelho / Hamster)',
+    REPTEIS: 'Réptil (Jabuti / Tartaruga)',
+    OUTRO: 'Outro',
+}
 export const PORTE = { PEQUENO: 'Pequeno', MEDIO: 'Médio', GRANDE: 'Grande' }
 export const IDADE = { FILHOTE: 'Filhote', ADULTO: 'Adulto', IDOSO: 'Idoso' }
 
@@ -44,4 +53,11 @@ export const PERFIL = {
     USUARIO_COMUM: 'Usuário comum',
     ONG: 'ONG / Protetor',
     ADMIN: 'Administrador',
+}
+
+// mensagem amigável a partir de um erro (inclusive o formato de erro da API Spring)
+export function mensagemDeErro(erro, padrao = 'Não foi possível concluir. Tente novamente.') {
+    const corpo = erro?.resposta ?? erro
+    if (corpo?.errors?.length) return corpo.errors.map((e) => e.mensagem).join(' ')
+    return corpo?.message || padrao
 }

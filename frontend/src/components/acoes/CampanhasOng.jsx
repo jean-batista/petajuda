@@ -3,7 +3,8 @@ import { PlusCircle, Pencil, Megaphone, Power } from 'lucide-react'
 import { listarCampanhasDaOng, criarCampanha, atualizarCampanha } from '../../services/ongService'
 import { formatarData } from '../../utils/format'
 import Modal from '../Modal'
-import { Campo, Carregando, Selo, Vazio, inputClasse, botaoPrimario, botaoSecundario } from '../ui'
+import { Campo, Carregando, Selo, Vazio, BotaoCarregando, inputClasse, botaoPrimario, botaoSecundario } from '../ui'
+import { mensagemDeErro } from '../../data/enums'
 import { useToast } from '../Toast'
 
 const hoje = () => new Date().toISOString().slice(0, 10)
@@ -27,7 +28,12 @@ function FormCampanha({ campanha, onSalvar, onCancelar }) {
     setErros(e)
     if (Object.keys(e).length) return
     setEnviando(true)
-    await onSalvar({ ...f, titulo: f.titulo.trim(), descricao: f.descricao.trim() })
+    try {
+      await onSalvar({ ...f, titulo: f.titulo.trim(), descricao: f.descricao.trim() })
+    } catch (err) {
+      setErros({ geral: mensagemDeErro(err) })
+      setEnviando(false)
+    }
   }
 
   return (
@@ -39,9 +45,10 @@ function FormCampanha({ campanha, onSalvar, onCancelar }) {
         <Campo rotulo="Término" erro={erros.dataFim}>{(id) => <input id={id} type="date" value={f.dataFim} onChange={(e) => setF({ ...f, dataFim: e.target.value })} className={inputClasse} />}</Campo>
       </div>
       <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={f.ativo} onChange={(e) => setF({ ...f, ativo: e.target.checked })} className="h-4 w-4 accent-green-600" /> Campanha ativa (aparece na página de ONGs)</label>
+      {erros.geral && <p role="alert" className="rounded-xl bg-red-50 p-3 text-sm text-red-700">{erros.geral}</p>}
       <div className="flex justify-end gap-3">
         <button type="button" onClick={onCancelar} className={botaoSecundario}>Cancelar</button>
-        <button type="submit" disabled={enviando} className={botaoPrimario}>{enviando ? 'Salvando...' : 'Salvar campanha'}</button>
+        <BotaoCarregando type="submit" carregando={enviando} textoCarregando="Salvando...">Salvar campanha</BotaoCarregando>
       </div>
     </form>
   )
@@ -77,7 +84,9 @@ export default function CampanhasOng({ ongId }) {
         <button onClick={() => setEditando('nova')} className={botaoPrimario}><PlusCircle className="h-4 w-4" /> Nova campanha</button>
       </div>
       {lista.length === 0 ? (
-        <Vazio icone={Megaphone} titulo="Nenhuma campanha ainda" texto="Divulgue feiras de adoção, vaquinhas e mutirões de castração." />
+        <Vazio icone={Megaphone} titulo="Nenhuma campanha ainda" texto="Divulgue feiras de adoção, vaquinhas e mutirões de castração. Elas aparecem na página de ONGs.">
+          <button onClick={() => setEditando('nova')} className={`${botaoPrimario} mt-2`}><PlusCircle className="h-4 w-4" /> Criar primeira campanha</button>
+        </Vazio>
       ) : (
         <ul className="grid gap-3 sm:grid-cols-2">
           {lista.map((c) => (

@@ -8,7 +8,7 @@ export default function ConfirmarModal({ titulo, texto, rotuloConfirmar = 'Exclu
       <p className="text-sm text-stone-600">{texto}</p>
       <div className="mt-6 flex justify-end gap-3">
         <button className={botaoSecundario} onClick={onFechar}>Cancelar</button>
-        <button className={botaoPerigo} onClick={onConfirmar} disabled={ocupado}>{rotuloConfirmar}</button>
+        <button className={botaoPerigo} onClick={onConfirmar} disabled={ocupado}>{ocupado ? 'Aguarde...' : rotuloConfirmar}</button>
       </div>
     </Modal>
   )

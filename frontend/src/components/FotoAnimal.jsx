@@ -1,11 +1,12 @@
 import { useState } from 'react'
-import { Dog, Cat, Bird } from 'lucide-react'
+import { Dog, Cat, Bird, Rabbit, Turtle, PawPrint } from 'lucide-react'
 
-const icones = { CACHORRO: Dog, GATO: Cat, PASSARO: Bird }
+const icones = { CACHORRO: Dog, GATO: Cat, PASSARO: Bird, EQUINO: PawPrint, ROEDOR: Rabbit, REPTEIS: Turtle, OUTRO: PawPrint }
 
 // Mostra a foto do animal. Se não houver foto (ou ela falhar ao carregar),
 // mostra uma ilustração fixa. Assim a imagem nunca aparece quebrada nem muda sozinha.
-export default function FotoAnimal({ animal, className = 'h-48 w-full' }) {
+// className define o tamanho; por padrão a foto tem proporção fixa 4:3 (aspect-ratio)
+export default function FotoAnimal({ animal, className = 'aspect-[4/3] w-full' }) {
   // guarda QUAL endereço falhou: se a foto for trocada, tenta carregar a nova
   const [urlComErro, setUrlComErro] = useState(null)
   const falhou = urlComErro === animal.fotoUrl
@@ -22,7 +23,7 @@ export default function FotoAnimal({ animal, className = 'h-48 w-full' }) {
     )
   }
 
-  const Icone = icones[animal.especieAnimal] ?? Dog
+  const Icone = icones[animal.especieAnimal] ?? PawPrint
   return (
     <div
       role="img"

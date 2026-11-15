@@ -56,7 +56,7 @@ export default function Detalhes() {
       </Link>
 
       <div className="grid gap-8 lg:grid-cols-2">
-        <FotoAnimal animal={animal} className="h-72 w-full rounded-3xl sm:h-96" />
+        <FotoAnimal animal={animal} className="aspect-[4/3] w-full self-start rounded-3xl" />
 
         <div className="flex flex-col gap-5">
           <div>

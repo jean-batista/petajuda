@@ -6,6 +6,7 @@ import { CIDADES, STATUS_ONG } from '../../data/enums'
 import { formatarTelefone, formatarCnpj, somenteDigitos } from '../../utils/format'
 import { Campo, Carregando, Selo, inputClasse, botaoPrimario } from '../ui'
 import { useToast } from '../Toast'
+import { USAR_API } from '../../services/http'
 
 const caixa = 'flex flex-col gap-4 rounded-2xl border border-stone-200 bg-white p-5'
 
@@ -46,7 +47,7 @@ function TrocarSenha() {
 
   async function salvar(e) {
     e.preventDefault()
-    if (f.nova.length < 6) return setErro('A nova senha precisa ter pelo menos 6 caracteres.')
+    if (f.nova.length < 8) return setErro('A nova senha precisa ter pelo menos 8 caracteres.')
     if (f.nova !== f.confirmar) return setErro('As senhas não coincidem.')
     try {
       await alterarSenha(usuario.id, f.atual, f.nova)
@@ -117,8 +118,8 @@ function DadosInstituicao({ ongId }) {
         <Campo rotulo="Razão social">{(id) => <input id={id} value={f.razaoSocial} onChange={mudar('razaoSocial')} className={inputClasse} />}</Campo>
         <Campo rotulo="CNPJ" dica="Alterações de CNPJ passam pela administração.">{(id) => <input id={id} value={formatarCnpj(f.cnpj)} disabled className={inputClasse} />}</Campo>
         <Campo rotulo="Chave Pix">{(id) => <input id={id} value={f.chavePix} onChange={mudar('chavePix')} className={inputClasse} />}</Campo>
-        <Campo rotulo="Telefone de contato">{(id) => <input id={id} value={f.telefone} onChange={(e) => setF({ ...f, telefone: formatarTelefone(e.target.value) })} className={inputClasse} />}</Campo>
-        <Campo rotulo="E-mail de contato">{(id) => <input id={id} type="email" value={f.email} onChange={mudar('email')} className={inputClasse} />}</Campo>
+        {!USAR_API && <Campo rotulo="Telefone de contato">{(id) => <input id={id} value={f.telefone} onChange={(e) => setF({ ...f, telefone: formatarTelefone(e.target.value) })} className={inputClasse} />}</Campo>}
+        {!USAR_API && <Campo rotulo="E-mail de contato">{(id) => <input id={id} type="email" value={f.email} onChange={mudar('email')} className={inputClasse} />}</Campo>}
       </div>
       <Campo rotulo="História e apresentação">{(id) => <textarea id={id} rows={3} value={f.descricao} onChange={mudar('descricao')} className={inputClasse} />}</Campo>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">

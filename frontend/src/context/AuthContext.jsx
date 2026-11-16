@@ -69,7 +69,7 @@ export function AuthProvider({ children }) {
     cadastrar: async (dados) => concluirAcesso(await authService.registrar(dados)),
     // a ONG vai direto para a Central, onde vê o aviso de "em análise"
     cadastrarOng: async (dados) => concluirAcesso(await authService.registrarOng(dados), '/acoes'),
-    sair: () => { guardarSessao(null); navigate('/') },
+    sair: () => { authService.sair(); guardarSessao(null); navigate('/') },
     // recarrega os dados do usuário depois de editar o perfil
     atualizarUsuario: (u) => setUsuario(u),
   }

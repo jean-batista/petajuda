@@ -6,6 +6,7 @@ import { Campo, inputClasse, botaoPrimario, botaoSecundario } from '../ui'
 import { CIDADES } from '../../data/enums'
 import { formatarTelefone, formatarCnpj, somenteDigitos } from '../../utils/format'
 import * as authService from '../../services/authService'
+import { USAR_API } from '../../services/http'
 
 // link com aparência de texto, para trocar de janela (ex.: "Criar conta")
 function LinkModal({ onClick, children }) {
@@ -17,6 +18,17 @@ function LinkModal({ onClick, children }) {
 }
 
 const emailValido = (v) => /^\S+@\S+\.\S+$/.test(v)
+const SENHA_MIN = 8
+
+// a API exige maior de idade
+function idadeValida(nascimento) {
+  if (!nascimento) return false
+  const n = new Date(`${nascimento}T00:00:00`)
+  const hoje = new Date()
+  let idade = hoje.getFullYear() - n.getFullYear()
+  if (hoje < new Date(hoje.getFullYear(), n.getMonth(), n.getDate())) idade--
+  return idade >= 18 && idade <= 150
+}
 
 // ---------- LOGIN ----------
 function Login() {
@@ -85,7 +97,7 @@ function Login() {
         <LinkModal onClick={() => abrirModal('ong')}>Cadastrar minha ONG</LinkModal>
       </p>
 
-      <div className="mt-5 rounded-2xl bg-stone-50 p-4">
+      {!USAR_API && <div className="mt-5 rounded-2xl bg-stone-50 p-4">
         <p className="text-xs font-semibold uppercase tracking-wide text-stone-500">Contas de demonstração · senha 123456</p>
         <div className="mt-2 flex flex-wrap gap-2">
           {contasDemo.map(([nome, mail]) => (
@@ -95,7 +107,7 @@ function Login() {
             </button>
           ))}
         </div>
-      </div>
+      </div>}
     </Modal>
   )
 }
@@ -103,7 +115,7 @@ function Login() {
 // ---------- CADASTRO DE USUÁRIO ----------
 function Cadastro() {
   const { cadastrar, abrirModal, fecharModal } = useAuth()
-  const [f, setF] = useState({ nome: '', sobrenome: '', email: '', telefone: '', senha: '', confirmar: '', termos: false })
+  const [f, setF] = useState({ nome: '', sobrenome: '', email: '', telefone: '', nascimento: '', cidade: 'Tubarão', bairro: '', rua: '', senha: '', confirmar: '', termos: false })
   const [erros, setErros] = useState({})
   const [erroGeral, setErroGeral] = useState('')
   const [enviando, setEnviando] = useState(false)
@@ -115,7 +127,10 @@ function Cadastro() {
     if (!f.sobrenome.trim()) e.sobrenome = 'Informe seu sobrenome.'
     if (!emailValido(f.email)) e.email = 'Informe um e-mail válido.'
     if (somenteDigitos(f.telefone).length < 10) e.telefone = 'Informe DDD e número.'
-    if (f.senha.length < 6) e.senha = 'A senha precisa ter pelo menos 6 caracteres.'
+    if (!idadeValida(f.nascimento)) e.nascimento = 'É preciso ter 18 anos ou mais.'
+    if (!f.bairro.trim()) e.bairro = 'Informe o bairro.'
+    if (!f.rua.trim()) e.rua = 'Informe a rua.'
+    if (f.senha.length < SENHA_MIN) e.senha = `A senha precisa ter pelo menos ${SENHA_MIN} caracteres.`
     if (f.senha !== f.confirmar) e.confirmar = 'As senhas não coincidem.'
     if (!f.termos) e.termos = 'É preciso aceitar os termos para continuar.'
     return e
@@ -129,7 +144,10 @@ function Cadastro() {
     setEnviando(true)
     setErroGeral('')
     try {
-      await cadastrar({ nome: f.nome.trim(), sobrenome: f.sobrenome.trim(), email: f.email, telefone: somenteDigitos(f.telefone), senha: f.senha })
+      await cadastrar({
+        nome: f.nome.trim(), sobrenome: f.sobrenome.trim(), email: f.email, telefone: somenteDigitos(f.telefone), senha: f.senha,
+        nascimento: f.nascimento, endereco: { estado: 'SC', cidade: f.cidade, bairro: f.bairro.trim(), rua: f.rua.trim(), complemento: '' },
+      })
     } catch (err) {
       setErroGeral(err.message)
       setEnviando(false)
@@ -144,9 +162,21 @@ function Cadastro() {
           <Campo rotulo="Sobrenome" erro={erros.sobrenome}>{(id) => <input id={id} value={f.sobrenome} onChange={mudar('sobrenome')} className={inputClasse} autoComplete="family-name" />}</Campo>
         </div>
         <Campo rotulo="E-mail" erro={erros.email}>{(id) => <input id={id} type="email" value={f.email} onChange={mudar('email')} className={inputClasse} autoComplete="email" />}</Campo>
-        <Campo rotulo="Telefone (WhatsApp)" erro={erros.telefone}>
-          {(id) => <input id={id} value={f.telefone} onChange={(e) => setF({ ...f, telefone: formatarTelefone(e.target.value) })} placeholder="(48) 99999-9999" className={inputClasse} inputMode="tel" autoComplete="tel" />}
-        </Campo>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <Campo rotulo="Telefone (WhatsApp)" erro={erros.telefone}>
+            {(id) => <input id={id} value={f.telefone} onChange={(e) => setF({ ...f, telefone: formatarTelefone(e.target.value) })} placeholder="(48) 99999-9999" className={inputClasse} inputMode="tel" autoComplete="tel" />}
+          </Campo>
+          <Campo rotulo="Data de nascimento" erro={erros.nascimento}>{(id) => <input id={id} type="date" value={f.nascimento} onChange={mudar('nascimento')} className={inputClasse} autoComplete="bday" />}</Campo>
+        </div>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <Campo rotulo="Cidade">{(id) => (
+            <select id={id} value={f.cidade} onChange={mudar('cidade')} className={inputClasse}>
+              {CIDADES.map((c) => <option key={c}>{c}</option>)}
+            </select>
+          )}</Campo>
+          <Campo rotulo="Bairro" erro={erros.bairro}>{(id) => <input id={id} value={f.bairro} onChange={mudar('bairro')} className={inputClasse} />}</Campo>
+          <Campo rotulo="Rua" erro={erros.rua}>{(id) => <input id={id} value={f.rua} onChange={mudar('rua')} className={inputClasse} autoComplete="address-line1" />}</Campo>
+        </div>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <Campo rotulo="Senha" erro={erros.senha}>{(id) => <input id={id} type="password" value={f.senha} onChange={mudar('senha')} className={inputClasse} autoComplete="new-password" />}</Campo>
           <Campo rotulo="Confirmar senha" erro={erros.confirmar}>{(id) => <input id={id} type="password" value={f.confirmar} onChange={mudar('confirmar')} className={inputClasse} autoComplete="new-password" />}</Campo>
@@ -174,7 +204,7 @@ function Cadastro() {
 function CadastroOng() {
   const { cadastrarOng, abrirModal, fecharModal } = useAuth()
   const [passo, setPasso] = useState(1)
-  const [r, setR] = useState({ nome: '', sobrenome: '', email: '', telefone: '', senha: '' })
+  const [r, setR] = useState({ nome: '', sobrenome: '', email: '', telefone: '', nascimento: '', senha: '' })
   const [o, setO] = useState({ nome: '', razaoSocial: '', cnpj: '', chavePix: '', descricao: '', cidade: 'Tubarão', bairro: '', rua: '', complemento: '' })
   const [erros, setErros] = useState({})
   const [erroGeral, setErroGeral] = useState('')
@@ -186,7 +216,8 @@ function CadastroOng() {
     if (!r.sobrenome.trim()) e.sobrenome = 'Informe o sobrenome.'
     if (!emailValido(r.email)) e.email = 'Informe um e-mail válido.'
     if (somenteDigitos(r.telefone).length < 10) e.telefone = 'Informe DDD e número.'
-    if (r.senha.length < 6) e.senha = 'Mínimo de 6 caracteres.'
+    if (!idadeValida(r.nascimento)) e.nascimento = 'O responsável precisa ter 18 anos ou mais.'
+    if (r.senha.length < SENHA_MIN) e.senha = `Mínimo de ${SENHA_MIN} caracteres.`
     return e
   }
   function validarPasso2() {
@@ -245,8 +276,9 @@ function CadastroOng() {
           <Campo rotulo="E-mail" erro={erros.email}>{(id) => <input id={id} type="email" value={r.email} onChange={(e) => setR({ ...r, email: e.target.value })} className={inputClasse} />}</Campo>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <Campo rotulo="Telefone (WhatsApp)" erro={erros.telefone}>{(id) => <input id={id} value={r.telefone} onChange={(e) => setR({ ...r, telefone: formatarTelefone(e.target.value) })} placeholder="(48) 99999-9999" className={inputClasse} />}</Campo>
-            <Campo rotulo="Senha" erro={erros.senha}>{(id) => <input id={id} type="password" value={r.senha} onChange={(e) => setR({ ...r, senha: e.target.value })} className={inputClasse} autoComplete="new-password" />}</Campo>
+            <Campo rotulo="Data de nascimento" erro={erros.nascimento}>{(id) => <input id={id} type="date" value={r.nascimento} onChange={(e) => setR({ ...r, nascimento: e.target.value })} className={inputClasse} />}</Campo>
           </div>
+          <Campo rotulo="Senha" erro={erros.senha}>{(id) => <input id={id} type="password" value={r.senha} onChange={(e) => setR({ ...r, senha: e.target.value })} className={inputClasse} autoComplete="new-password" />}</Campo>
           <button type="submit" className={botaoPrimario}>Próximo passo</button>
         </form>
       ) : (
@@ -271,9 +303,11 @@ function CadastroOng() {
             <Campo rotulo="Complemento">{(id) => <input id={id} value={o.complemento} onChange={(e) => setO({ ...o, complemento: e.target.value })} className={inputClasse} />}</Campo>
           </div>
 
-          <p className="rounded-xl bg-amber-50 p-3 text-sm text-amber-800">
-            O perfil passará por análise da administração antes de ser exibido publicamente.
-          </p>
+          {!USAR_API && (
+            <p className="rounded-xl bg-amber-50 p-3 text-sm text-amber-800">
+              O perfil passará por análise da administração antes de ser exibido publicamente.
+            </p>
+          )}
           {erroGeral && <p role="alert" className="rounded-xl bg-red-50 p-3 text-sm text-red-700">{erroGeral}</p>}
 
           <div className="flex gap-3">
@@ -303,8 +337,12 @@ function Recuperar() {
     if (!emailValido(email)) return setErro('Informe um e-mail válido.')
     setErro('')
     setEnviando(true)
-    await authService.recuperarSenha(email)
-    setEnviado(true)
+    try {
+      await authService.recuperarSenha(email)
+      setEnviado(true)
+    } catch (err) {
+      setErro(err.message)
+    }
     setEnviando(false)
   }
 

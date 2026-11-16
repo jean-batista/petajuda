@@ -5,6 +5,7 @@ import { TIPO_PUBLICACAO, ESPECIE, PORTE, IDADE, SEXO, CIDADES, mensagemDeErro }
 import { lerImagem } from '../../utils/format'
 import { criarPublicacao, atualizarPublicacao } from '../../services/publicacaoService'
 import { useToast } from '../Toast'
+import { USAR_API } from '../../services/http'
 
 // valores iniciais: vazio para nova publicação, ou os dados atuais ao editar
 function valoresIniciais(p, usuario) {
@@ -54,13 +55,16 @@ export default function PublicacaoForm({ usuario, publicacao, onSalvo, onCancela
     const e = {}
     if (!f.nome.trim()) e.nome = 'Informe o nome ou "Sem nome".'
     if (!f.corPredominante.trim()) e.corPredominante = 'Informe a cor predominante.'
+    if (USAR_API && !f.fotoUrl) e.foto = 'Adicione uma foto do animal.'
     return e
   }
   function validarEtapa2() {
     const e = {}
     if (f.titulo.trim().length < 5) e.titulo = 'Escreva um título (mínimo 5 caracteres).'
+    if (f.titulo.trim().length > 50) e.titulo = 'O título pode ter no máximo 50 caracteres.'
     if (f.descricao.trim().length < 10) e.descricao = 'Descreva o ocorrido (mínimo 10 caracteres).'
     if (!f.bairro.trim()) e.bairro = 'Informe o bairro.'
+    if (!f.rua.trim()) e.rua = 'Informe a rua ou estrada.'
     return e
   }
 
@@ -138,7 +142,8 @@ export default function PublicacaoForm({ usuario, publicacao, onSalvo, onCancela
           <Campo rotulo="Características (opcional)">{(id) => <textarea id={id} rows={2} value={f.descricaoAnimal} onChange={mudar('descricaoAnimal')} placeholder="Temperamento, marcas, coleira..." className={inputClasse} />}</Campo>
 
           <div>
-            <p className="mb-1.5 text-sm font-medium text-stone-700">Foto do animal</p>
+            <p className="mb-1.5 text-sm font-medium text-stone-700">Foto do animal{USAR_API && ' (obrigatória)'}</p>
+            {erros.foto && <p role="alert" className="mb-1.5 text-xs text-red-600">{erros.foto}</p>}
             {f.fotoUrl ? (
               <div className="relative h-48 overflow-hidden rounded-xl border border-stone-300 bg-stone-100">
                 <img src={f.fotoUrl} alt="Pré-visualização" className="h-full w-full object-contain" />
@@ -172,7 +177,7 @@ export default function PublicacaoForm({ usuario, publicacao, onSalvo, onCancela
             </div>
           </div>
 
-          <Campo rotulo="Título" erro={erros.titulo}>{(id) => <input id={id} value={f.titulo} onChange={mudar('titulo')} placeholder="Ex.: Cão caramelo perdido no Centro" className={inputClasse} />}</Campo>
+          <Campo rotulo="Título" erro={erros.titulo} dica={`${f.titulo.length}/50 caracteres`}>{(id) => <input id={id} value={f.titulo} maxLength={50} onChange={mudar('titulo')} placeholder="Ex.: Cão caramelo perdido no Centro" className={inputClasse} />}</Campo>
           <Campo rotulo="Descrição do ocorrido" erro={erros.descricao}>{(id) => <textarea id={id} rows={3} value={f.descricao} onChange={mudar('descricao')} placeholder="Onde e quando foi visto, como está..." className={inputClasse} />}</Campo>
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -182,14 +187,14 @@ export default function PublicacaoForm({ usuario, publicacao, onSalvo, onCancela
               </select>
             )}</Campo>
             <Campo rotulo="Bairro" erro={erros.bairro}>{(id) => <input id={id} value={f.bairro} onChange={mudar('bairro')} className={inputClasse} />}</Campo>
-            <Campo rotulo="Rua (opcional)">{(id) => <input id={id} value={f.rua} onChange={mudar('rua')} className={inputClasse} />}</Campo>
+            <Campo rotulo="Rua" erro={erros.rua}>{(id) => <input id={id} value={f.rua} onChange={mudar('rua')} className={inputClasse} />}</Campo>
             <Campo rotulo="Ponto de referência (opcional)">{(id) => <input id={id} value={f.complemento} onChange={mudar('complemento')} className={inputClasse} />}</Campo>
           </div>
 
-          <label className="flex items-start gap-2 rounded-xl bg-stone-50 p-3 text-sm text-stone-700">
+          {!USAR_API && <label className="flex items-start gap-2 rounded-xl bg-stone-50 p-3 text-sm text-stone-700">
             <input type="checkbox" checked={f.exibirTelefone} onChange={mudar('exibirTelefone')} className="mt-0.5 h-4 w-4 accent-green-600" />
             <span>Mostrar meu WhatsApp nesta publicação para que as pessoas possam me chamar (LGPD).</span>
-          </label>
+          </label>}
         </>
       )}
 

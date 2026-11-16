@@ -14,6 +14,7 @@ import ConfirmarModal from '../ConfirmarModal'
 import { Carregando, Selo, Vazio, inputClasse, botaoPrimario, botaoSecundario, botaoPerigo } from '../ui'
 import { useToast } from '../Toast'
 import { useAuth } from '../../context/AuthContext'
+import { USAR_API } from '../../services/http'
 
 // ---------- Tela 14: métricas ----------
 export function AdminMetricas({ irPara }) {
@@ -49,7 +50,7 @@ export function AdminMetricas({ irPara }) {
         </button>
       ))}
     </div>
-    <button onClick={restaurar} className={`${botaoSecundario} self-start`}>Restaurar dados de demonstração</button>
+    {!USAR_API && <button onClick={restaurar} className={`${botaoSecundario} self-start`}>Restaurar dados de demonstração</button>}
     </div>
   )
 }
@@ -140,6 +141,23 @@ export function AdminOngs() {
   }
 
   if (lista === null) return <Carregando />
+  if (USAR_API) {
+    return (
+      <div className="flex flex-col gap-4">
+        <p className="rounded-2xl bg-amber-50 p-4 text-sm text-amber-900">
+          O backend ainda não tem aprovação de ONGs: toda instituição cadastrada já aparece no site. Abaixo estão as {lista.length} ONGs cadastradas.
+        </p>
+        {lista.map((o) => (
+          <article key={o.id} className="flex flex-col gap-2 rounded-2xl border border-stone-200 bg-white p-5">
+            <h3 className="font-semibold">{o.nome}</h3>
+            <p className="text-sm text-stone-600">{o.descricao}</p>
+            <p className="text-sm text-stone-500">{o.razaoSocial} · CNPJ <span className="font-mono">{formatarCnpj(o.cnpj)}</span> · {o.endereco.cidade}</p>
+          </article>
+        ))}
+        {lista.length === 0 && <Vazio icone={Building2} titulo="Nenhuma ONG cadastrada" />}
+      </div>
+    )
+  }
   const visiveis = lista.filter((o) => o.status === filtro)
 
   return (

@@ -5,8 +5,9 @@ import { CIDADES, STATUS_DENUNCIA, mensagemDeErro } from '../../data/enums'
 import { lerImagem, formatarData, copiarTexto } from '../../utils/format'
 import { criarDenuncia, consultarDenuncia } from '../../services/denunciaService'
 import { useToast } from '../Toast'
+import { USAR_API } from '../../services/http'
 
-const vazio = { descricao: '', fotoUrl: '', cidade: 'Tubarão', bairro: '', rua: '', complemento: '' }
+const vazio = { titulo: '', descricao: '', fotoUrl: '', cidade: 'Tubarão', bairro: '', rua: '', complemento: '' }
 
 // acompanhar uma denúncia já enviada usando o protocolo (RF14)
 function Acompanhar() {
@@ -55,6 +56,8 @@ export default function DenunciaForm() {
   async function enviar(ev) {
     ev.preventDefault()
     const e = {}
+    if (f.titulo.trim().length < 5) e.titulo = 'Dê um título curto para a ocorrência (mínimo 5 caracteres).'
+    if (USAR_API && !f.fotoUrl) e.foto = 'Anexe uma foto ou evidência.'
     if (f.descricao.trim().length < 15) e.descricao = 'Descreva a situação com mais detalhes (mínimo 15 caracteres).'
     if (!f.bairro.trim()) e.bairro = 'Informe o bairro.'
     if (!f.rua.trim()) e.rua = 'Informe a rua ou um ponto de referência.'
@@ -63,7 +66,7 @@ export default function DenunciaForm() {
     setEnviando(true)
     try {
       const denuncia = await criarDenuncia({
-        descricao: f.descricao.trim(), fotoUrl: f.fotoUrl,
+        titulo: f.titulo.trim(), descricao: f.descricao.trim(), fotoUrl: f.fotoUrl,
         endereco: { cidade: f.cidade, bairro: f.bairro.trim(), rua: f.rua.trim(), complemento: f.complemento.trim() },
       })
       setProtocolo(denuncia.id)
@@ -81,12 +84,12 @@ export default function DenunciaForm() {
         <div className="flex flex-col items-center gap-3 rounded-2xl border border-green-200 bg-green-50 p-8 text-center">
           <CheckCircle2 className="h-12 w-12 text-green-600" />
           <p className="text-lg font-semibold">Denúncia enviada com sucesso</p>
-          <p className="max-w-md text-sm text-stone-600">Ela será analisada pela administração. Guarde o protocolo para acompanhar:</p>
+          <p className="max-w-md text-sm text-stone-600">Ela será analisada pela administração. Número do protocolo:</p>
           <button onClick={async () => (await copiarTexto(protocolo)) && toast.sucesso('Protocolo copiado!')}
             className="rounded-xl bg-white px-4 py-2 font-mono font-bold text-green-800 shadow-sm">{protocolo}</button>
           <button onClick={() => setProtocolo(null)} className={`${botaoSecundario} mt-2`}>Fazer outra denúncia</button>
         </div>
-        <Acompanhar />
+        {!USAR_API && <Acompanhar />}
       </div>
     )
   }
@@ -99,6 +102,9 @@ export default function DenunciaForm() {
       </div>
 
       <form onSubmit={enviar} className="flex flex-col gap-4 rounded-2xl border border-stone-200 bg-white p-5" noValidate>
+        <Campo rotulo="Título da ocorrência" erro={erros.titulo}>
+          {(id) => <input id={id} value={f.titulo} maxLength={100} onChange={mudar('titulo')} placeholder="Ex.: Cachorro preso sem água" className={inputClasse} />}
+        </Campo>
         <Campo rotulo="O que está acontecendo?" erro={erros.descricao}>
           {(id) => <textarea id={id} rows={4} value={f.descricao} onChange={mudar('descricao')} placeholder="Descreva a situação de maus-tratos ou abandono..." className={inputClasse} />}
         </Campo>
@@ -115,7 +121,8 @@ export default function DenunciaForm() {
         </div>
 
         <div>
-          <p className="mb-1.5 text-sm font-medium text-stone-700">Foto ou evidência (opcional)</p>
+          <p className="mb-1.5 text-sm font-medium text-stone-700">Foto ou evidência {USAR_API ? '(obrigatória)' : '(opcional)'}</p>
+          {erros.foto && <p role="alert" className="mb-1.5 text-xs text-red-600">{erros.foto}</p>}
           {f.fotoUrl ? (
             <div className="relative h-40 overflow-hidden rounded-xl border border-stone-300 bg-stone-100">
               <img src={f.fotoUrl} alt="Evidência anexada" className="h-full w-full object-contain" />
@@ -133,7 +140,7 @@ export default function DenunciaForm() {
         <BotaoCarregando type="submit" carregando={enviando} textoCarregando={f.fotoUrl ? 'Enviando foto...' : 'Enviando...'}>Enviar denúncia anônima</BotaoCarregando>
       </form>
 
-      <Acompanhar />
+      {!USAR_API && <Acompanhar />}
     </div>
   )
 }

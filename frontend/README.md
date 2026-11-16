@@ -1,16 +1,49 @@
-# React + Vite
+# Pet Ajuda · Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+React + Vite + Tailwind CSS + Lucide + React Router.
 
-Currently, two official plugins are available:
+## Rodar
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+```bash
+npm install
+npm run dev
+```
 
-## React Compiler
+Abre em `http://localhost:5173`.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Modo demonstração x API
 
-## Expanding the Oxlint configuration
+O site funciona de dois jeitos:
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and Oxlint's TypeScript related rules in your project.
+| Modo | Quando | Dados |
+|---|---|---|
+| **Demonstração** | sem o arquivo `.env.local` | dados de exemplo salvos no navegador (`src/data`) |
+| **API** | com `VITE_API_URL` no `.env.local` | backend Spring Boot (`/api/v1/...`) |
+
+Para usar a API:
+
+1. Copie `.env.example` para `.env.local` (o endereço padrão é `http://localhost:8080`).
+2. No backend, a variável `ALLOWED_ORIGINS` precisa incluir `http://localhost:5173` (CORS).
+3. Reinicie o `npm run dev`.
+
+No modo demonstração, a janela de login mostra atalhos para as contas Usuário, ONG e Admin (senha `123456`).
+
+## Estrutura
+
+```
+src/
+  pages/        as 4 telas (Feed, Detalhes, ONGs, Central de Ações)
+  components/   peças reaproveitáveis (cards, modais, formulários)
+  context/      sessão do usuário (AuthContext)
+  services/     funções que as telas chamam; escolhem entre API e demonstração
+    http.js     cliente da API (token JWT, multipart, mensagens de erro)
+    api/        chamadas aos endpoints e conversão das respostas
+  data/         enums e dados de demonstração
+```
+
+## Diferenças conhecidas em relação ao backend
+
+- O backend ainda não tem **aprovação de ONGs**: no modo API toda ONG cadastrada já aparece no site.
+- Ao cadastrar uma ONG, o backend mantém o perfil `USUARIO_COMUM`; o front trata como ONG quem tem uma ONG vinculada.
+- Não há endpoint de **recuperação de senha** nem de **consulta de denúncia por protocolo** para quem não é admin.
+- O feed (`GET /publicacoes`) ainda não aceita filtros; o filtro é feito no front.

@@ -58,6 +58,14 @@ public class OngController implements OngControllerDoc {
         return ResponseEntity.ok(response);
     }
 
+    // Busca uma ONG pelo id do Usuario
+//    @Override
+    @GetMapping("/usuario/{usuarioId}")
+    public ResponseEntity<OngResponse> buscarPorUsuarioId(@PathVariable UUID usuarioId) {
+        OngResponse response = ongService.buscarPorUsuarioId(usuarioId);
+        return ResponseEntity.ok(response);
+    }
+
     // Lista todas as ONGs cadastradas no sistema
     @Override
     @GetMapping

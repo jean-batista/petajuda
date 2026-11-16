@@ -1,6 +1,6 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
-import { CIDADES_AMUREL } from '../../data/enums'
 import { formatarCnpj, formatarTelefone, somenteDigitos } from '../../utils/format'
 import { validarEmail } from '../../utils/validators'
 import { LinkModal } from "../ui/LinkModal"
@@ -8,7 +8,8 @@ import Modal from '../ui/Modal'
 import { botaoPrimario, botaoSecundario, Campo, inputClasse } from '../ui/Ui'
 
 export function CadastroInstitucional() {
-  const { cadastrarOng, abrirModal, fecharModal } = useAuth()
+  const { cadastrar, entrar, cadastrarOng, abrirModal, fecharModal } = useAuth()
+  const navigate = useNavigate()
   const [passo, setPasso] = useState(1)
   
   const [r, setR] = useState({ nome: '', sobrenome: '', email: '', telefone: '', nascimento: '', senha: '' })
@@ -23,7 +24,22 @@ export function CadastroInstitucional() {
     if (!r.sobrenome.trim()) e.sobrenome = 'Informe o sobrenome.'
     if (!validarEmail(r.email)) e.email = 'Informe um e-mail válido.'
     if (somenteDigitos(r.telefone).length < 10) e.telefone = 'Informe DDD e número.'
-    if (!r.nascimento) e.nascimento = 'Informe sua data de nascimento.'
+    
+    if (!r.nascimento) {
+      e.nascimento = 'A data de nascimento é obrigatória.'
+    } else {
+      const hoje = new Date()
+      const nascimento = new Date(r.nascimento)
+      let idade = hoje.getFullYear() - nascimento.getFullYear()
+      const m = hoje.getMonth() - nascimento.getMonth()
+      if (m < 0 || (m === 0 && hoje.getDate() < nascimento.getDate())) {
+        idade--
+      }
+      if (idade < 18) {
+        e.nascimento = 'O usuário deve ter no mínimo 18 anos de idade para se registrar.'
+      }
+    }
+
     if (r.senha.length < 8) e.senha = 'Mínimo de 8 caracteres.'
     return e
   }
@@ -32,10 +48,11 @@ export function CadastroInstitucional() {
     const e = {}
     if (!o.nome.trim()) e.nome = 'Informe o nome da instituição.'
     if (!o.razaoSocial.trim()) e.razaoSocial = 'Informe a razão social.'
-    if (somenteDigitos(o.cnpj).length !== 14) e.cnpj = 'O CNPJ precisa ter 14 números.'
+    // Validação alinhada ao Spring: garante 14 dígitos numéricos para a anotação @CNPJ processar
+    if (somenteDigitos(o.cnpj).length !== 14) e.cnpj = 'O CNPJ deve conter exatamente 14 números.'
     if (!o.chavePix.trim()) e.chavePix = 'Informe a chave Pix para doações.'
     if (o.descricao.trim().length < 20) e.descricao = 'Conte um pouco mais (mínimo 20 caracteres).'
-    if (!o.cidade.trim()) e.cidade = 'Selecione a cidade.'
+    if (!o.cidade.trim()) e.cidade = 'Informe a cidade.'
     if (!o.bairro.trim()) e.bairro = 'Informe o bairro.'
     if (!o.rua.trim()) e.rua = 'Informe a rua.'
     return e
@@ -56,29 +73,45 @@ export function CadastroInstitucional() {
     
     setEnviando(true)
     setErroGeral('')
+
     try {
+      // ETAPA 1: Cadastra e autentica o usuário responsável primeiro (salva o token JWT)
+      await cadastrar({
+        nome: r.nome.trim(), 
+        sobrenome: r.sobrenome.trim(), 
+        email: r.email.trim(),
+        senha: r.senha,
+        telefone: somenteDigitos(r.telefone),
+        nascimento: r.nascimento,
+        endereco: { 
+          estado: 'SC', 
+          cidade: o.cidade.trim(), 
+          bairro: o.bairro.trim(), 
+          rua: o.rua.trim(), 
+          complemento: o.complemento.trim() 
+        }
+      })
+
+      // ETAPA 2: Faz o login automático para resgatar e salvar o token JWT no localStorage
+      await entrar(r.email.trim(), r.senha)
+
+      // ETAPA 3: Com o usuário logado e token ativo, envia o POST para /ongs com o CNPJ limpo (somente números)
       await cadastrarOng({
-        responsavel: { 
-          ...r, 
-          nome: r.nome.trim(), 
-          sobrenome: r.sobrenome.trim(), 
-          telefone: somenteDigitos(r.telefone)
-        },
-        ong: {
-          nome: o.nome.trim(), 
-          razaoSocial: o.razaoSocial.trim(), 
-          cnpj: somenteDigitos(o.cnpj),
-          chavePix: o.chavePix.trim(), 
-          descricao: o.descricao.trim(),
-          endereco: { 
-            estado: 'SC', 
-            cidade: o.cidade, 
-            bairro: o.bairro.trim(), 
-            rua: o.rua.trim(), 
-            complemento: o.complemento.trim() 
-          },
+        nome: o.nome.trim(), 
+        razaoSocial: o.razaoSocial.trim(), 
+        cnpj: somenteDigitos(o.cnpj), // Formato limpo exigido pela anotação @CNPJ do backend
+        chavePix: o.chavePix.trim(), 
+        descricao: o.descricao.trim(),
+        endereco: { 
+          estado: 'SC', 
+          cidade: o.cidade.trim(), 
+          bairro: o.bairro.trim(), 
+          rua: o.rua.trim(), 
+          complemento: o.complemento.trim() 
         },
       })
+
+      navigate('/acoes')
     } catch (err) {
       setErroGeral(err.message || 'Falha ao cadastrar instituição.')
       setEnviando(false)
@@ -124,12 +157,7 @@ export function CadastroInstitucional() {
              <p className="text-[11px] font-semibold text-stone-500 uppercase mb-3">Endereço da Sede</p>
              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 mb-4">
                <Campo rotulo="Cidade" erro={erros.cidade}>
-                 {(id) => (
-                   <select id={id} value={o.cidade} onChange={(e) => setO({ ...o, cidade: e.target.value })} className={inputClasse}>
-                     <option value="">Selecione a cidade</option>
-                     {CIDADES_AMUREL.map((c) => <option key={c} value={c}>{c}</option>)}
-                   </select>
-                 )}
+                 {(id) => <input id={id} value={o.cidade} onChange={(e) => setO({ ...o, cidade: e.target.value })} placeholder="Ex: Tubarão" className={inputClasse} />}
                </Campo>
                <Campo rotulo="Bairro" erro={erros.bairro}>{(id) => <input id={id} value={o.bairro} onChange={(e) => setO({ ...o, bairro: e.target.value })} className={inputClasse} />}</Campo>
              </div>
@@ -139,9 +167,6 @@ export function CadastroInstitucional() {
              </div>
           </div>
 
-          <p className="rounded-xl bg-amber-50 p-3 text-sm text-amber-800">
-            O perfil passará por análise da administração antes de ser exibido publicamente.
-          </p>
           {erroGeral && <p role="alert" className="rounded-xl bg-red-50 p-3 text-sm text-red-700">{erroGeral}</p>}
 
           <div className="flex gap-3">

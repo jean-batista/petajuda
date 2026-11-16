@@ -66,6 +66,17 @@ public class OngService {
         return mapper.paraDto(ong);
     }
 
+    // Busca uma Ong pelo id
+    @Transactional(readOnly = true)
+    public OngResponse buscarPorUsuarioId(UUID usuarioId) {
+
+        // Verifica se a Ong existe
+        Ong ong = repository.findByUsuarioId(usuarioId).orElseThrow(
+                () -> new RecursoNaoEncontradoException("Não foi possível encontrar uma ONG com o usuario id: " + usuarioId)
+        );
+        return mapper.paraDto(ong);
+    }
+
     // Busca todas as Ongs cadastradas
     @Transactional(readOnly = true)
     public List<OngResponse> buscarOngs() {

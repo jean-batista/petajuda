@@ -25,6 +25,14 @@ export async function buscarOng(id) {
   }
 }
 
+/**
+ * Busca a ONG pública vinculada ao ID de um usuário.
+ * @param {number|string} id ID do usuário
+ */
+export async function buscarOngPorUsuario(id) {
+  return await api(`/ongs/usuario/${id}`, {}, 'Erro ao buscar dados da instituição.')
+}
+
 export async function listarAnimaisDaOng(ongId) {
   try {
     const publicacoes = await api('/publicacoes')

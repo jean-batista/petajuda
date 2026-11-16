@@ -20,7 +20,7 @@ export async function cadastrarUsuario(dados) {
 }
 
 export async function cadastrarOng(dados) {
-  return await api('/autenticacao/cadastro-ong', {
+  return await api('/ongs', {
     method: METHOD_TYPE.POST,
     body: dados
   }, 'Falha ao cadastrar instituição.')

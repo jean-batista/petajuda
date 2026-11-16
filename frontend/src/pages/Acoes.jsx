@@ -1,6 +1,6 @@
 import {
   Ban,
-  BarChart3, Building2,
+  BarChart3, Building, Building2,
   FileText,
   Gavel,
   Hourglass,
@@ -26,6 +26,7 @@ import { Carregando } from '../components/ui/Ui'
 import { useAuth } from '../context/AuthContext'
 import { PERFIL } from '../data/enums'
 import { buscarOng } from '../services/ongService'
+import { OngForm } from '../components/acoes/ongs/OngForm'
 
 const ABAS = {
   VISITANTE: [
@@ -36,6 +37,7 @@ const ABAS = {
     { id: 'nova', rotulo: 'Nova publicação', icone: PlusCircle },
     { id: 'animais', rotulo: 'Meus animais', icone: PawPrint },
     { id: 'denuncia', rotulo: 'Denúncia anônima', icone: ShieldAlert },
+    { id: 'ongs', rotulo: 'Cadastrar Ong', icone: Building },
     { id: 'perfil', rotulo: 'Meu perfil', icone: UserCog },
   ],
   ONG: [
@@ -49,7 +51,6 @@ const ABAS = {
   ADMIN: [
     { id: 'metricas', rotulo: 'Métricas', icone: BarChart3 },
     { id: 'denuncias', rotulo: 'Denúncias', icone: ShieldAlert },
-    { id: 'ongs', rotulo: 'Aprovar ONGs', icone: Building2 },
     { id: 'moderacao', rotulo: 'Moderação', icone: Gavel },
   ],
 }
@@ -113,7 +114,7 @@ function Painel({ perfil, abaInicial }) {
       case 'campanhas': return <CampanhasOng ongId={usuario?.ongId} />
       case 'metricas': return <AdminMetricas />
       case 'denuncias': return <AdminDenuncias />
-      case 'ongs': return <AdminOngs />
+      case 'ongs': return <OngForm />
       case 'moderacao': return <AdminModeracao />
       default: return null
     }

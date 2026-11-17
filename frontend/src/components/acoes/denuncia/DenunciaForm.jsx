@@ -10,9 +10,10 @@ import { useToast } from '../../../context/ToastContext'
 import { STATUS_DENUNCIA } from '../../../data/enums'
 import { consultarDenuncia, criarDenuncia } from '../../../services/denunciaService'
 import { copiarTexto, formatarData } from '../../../utils/format'
+import SeletorLocalidade from '../../ui/SeletorLocalidade'
 import { Campo, Selo, botaoPrimario, botaoSecundario, inputClasse } from '../../ui/Ui'
 
-const vazio = { descricao: '', cidade: '', bairro: '', rua: '', complemento: '' }
+const vazio = { descricao: '', estado: 'SC', cidade: '', bairro: '', rua: '', complemento: '' }
 
 function Acompanhar() {
   const [protocolo, setProtocolo] = useState('')
@@ -64,7 +65,8 @@ export default function DenunciaForm() {
     ev.preventDefault()
     const e = {}
     if (f.descricao.trim().length < 15) e.descricao = 'Descreva a situação com mais detalhes (mínimo 15 caracteres).'
-    if (!f.cidade.trim()) e.cidade = 'Informe a cidade.'
+    if (!f.estado) e.estado = 'Selecione o estado.'
+    if (!f.cidade.trim()) e.cidade = 'Selecione a cidade.'
     if (!f.bairro.trim()) e.bairro = 'Informe o bairro.'
     if (!f.rua.trim()) e.rua = 'Informe a rua ou um ponto de referência.'
     setErros(e)
@@ -76,7 +78,7 @@ export default function DenunciaForm() {
         titulo: 'Denúncia de maus-tratos / abandono',
         descricao: f.descricao.trim(),
         endereco: {
-          estado: 'SC',
+          estado: f.estado,
           cidade: f.cidade.trim(),
           bairro: f.bairro.trim(),
           rua: f.rua.trim(),
@@ -124,10 +126,17 @@ export default function DenunciaForm() {
         </Campo>
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <Campo rotulo="Cidade" erro={erros.cidade}>{(id) => <input id={id} value={f.cidade} onChange={mudar('cidade')} className={inputClasse} />}</Campo>
+          <SeletorLocalidade
+            estado={f.estado}
+            cidade={f.cidade}
+            onMudarEstado={(estado) => setF((prev) => ({ ...prev, estado }))}
+            onMudarCidade={(cidade) => setF((prev) => ({ ...prev, cidade }))}
+            erroEstado={erros.estado}
+            erroCidade={erros.cidade}
+          />
           <Campo rotulo="Bairro" erro={erros.bairro}>{(id) => <input id={id} value={f.bairro} onChange={mudar('bairro')} className={inputClasse} />}</Campo>
           <Campo rotulo="Rua" erro={erros.rua}>{(id) => <input id={id} value={f.rua} onChange={mudar('rua')} className={inputClasse} />}</Campo>
-          <Campo rotulo="Ponto de referência (opcional)">{(id) => <input id={id} value={f.complemento} onChange={mudar('complemento')} className={inputClasse} />}</Campo>
+          <Campo rotulo="Ponto de referência (opcional)" className="sm:col-span-2">{(id) => <input id={id} value={f.complemento} onChange={mudar('complemento')} className={inputClasse} />}</Campo>
         </div>
 
         <div>

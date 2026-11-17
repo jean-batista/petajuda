@@ -38,7 +38,7 @@ export async function atualizarPerfil(id, dados) {
 }
 
 export async function alterarSenha(senhaAntiga, senhaNova) {
-  await api.patch('/usuarios/me/senha', {
+  await api('/usuarios/me/senha', {
     method: METHOD_TYPE.PATCH,
     body: { senhaAntiga, senhaNova }
   }, 'Falha ao alterar senha.')
@@ -47,7 +47,7 @@ export async function alterarSenha(senhaAntiga, senhaNova) {
 
 export async function recuperarSenha(email) {
   try {
-    await api.post('/autenticacao/recuperar-senha', {
+    await api('/autenticacao/recuperar-senha', {
       method: METHOD_TYPE.POST,
       body: { email }
     })

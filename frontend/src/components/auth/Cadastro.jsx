@@ -1,29 +1,28 @@
 import { useState } from 'react'
 import { useAuth } from '../../context/AuthContext'
-import { CIDADES_AMUREL } from '../../data/enums'
-import { cadastrarUsuario } from "../../services/authService"
 import { formatarTelefone, somenteDigitos } from '../../utils/format'
 import { validarEmail } from '../../utils/validators'
 import { LinkModal } from "../ui/LinkModal"
 import Modal from '../ui/Modal'
+import SeletorLocalidade from '../ui/SeletorLocalidade'
 import { botaoPrimario, Campo, inputClasse } from '../ui/Ui'
 
 export function Cadastro() {
   const { cadastrar, abrirModal, fecharModal } = useAuth()
-  
-  const [f, setF] = useState({ 
+
+  const [f, setF] = useState({
     nome: '', sobrenome: '', email: '', telefone: '', nascimento: '',
     senha: '', confirmar: '', termos: false,
-    estado: 'SC', cidade: '', bairro: '', rua: '', complemento: '' 
+    estado: 'SC', cidade: '', bairro: '', rua: '', complemento: ''
   })
-  
+
   const [erros, setErros] = useState({})
   const [erroGeral, setErroGeral] = useState('')
   const [enviando, setEnviando] = useState(false)
-  
-  const mudar = (campo) => (e) => setF({ 
-    ...f, 
-    [campo]: e.target.type === 'checkbox' ? e.target.checked : e.target.value 
+
+  const mudar = (campo) => (e) => setF({
+    ...f,
+    [campo]: e.target.type === 'checkbox' ? e.target.checked : e.target.value
   })
 
   function validar() {
@@ -33,6 +32,7 @@ export function Cadastro() {
     if (!validarEmail(f.email)) e.email = 'Informe um e-mail válido.'
     if (somenteDigitos(f.telefone).length < 10) e.telefone = 'Informe DDD e número válido.'
     if (!f.nascimento) e.nascimento = 'Informe sua data de nascimento.'
+    if (!f.estado) e.estado = 'Selecione seu estado.'
     if (!f.cidade.trim()) e.cidade = 'Selecione sua cidade.'
     if (!f.bairro.trim()) e.bairro = 'Informe seu bairro.'
     if (!f.rua.trim()) e.rua = 'Informe sua rua.'
@@ -47,25 +47,26 @@ export function Cadastro() {
     const e = validar()
     setErros(e)
     if (Object.keys(e).length) return
-    
+
     setEnviando(true)
     setErroGeral('')
     try {
-      await cadastrarUsuario({ 
-        nome: f.nome.trim(), 
-        sobrenome: f.sobrenome.trim(), 
-        email: f.email.trim(), 
-        telefone: somenteDigitos(f.telefone), 
+      await cadastrar({
+        nome: f.nome.trim(),
+        sobrenome: f.sobrenome.trim(),
+        email: f.email.trim(),
+        telefone: somenteDigitos(f.telefone),
         nascimento: f.nascimento,
         senha: f.senha,
         endereco: {
           estado: f.estado,
-          cidade: f.cidade,
+          cidade: f.cidade.trim(),
           bairro: f.bairro.trim(),
           rua: f.rua.trim(),
           complemento: f.complemento.trim()
         }
       })
+      fecharModal()
     } catch (err) {
       setErroGeral(err.message || 'Falha ao realizar cadastro.')
       setEnviando(false)
@@ -79,9 +80,9 @@ export function Cadastro() {
           <Campo rotulo="Nome" erro={erros.nome}>{(id) => <input id={id} value={f.nome} onChange={mudar('nome')} className={inputClasse} autoComplete="given-name" />}</Campo>
           <Campo rotulo="Sobrenome" erro={erros.sobrenome}>{(id) => <input id={id} value={f.sobrenome} onChange={mudar('sobrenome')} className={inputClasse} autoComplete="family-name" />}</Campo>
         </div>
-        
+
         <Campo rotulo="E-mail" erro={erros.email}>{(id) => <input id={id} type="email" value={f.email} onChange={mudar('email')} className={inputClasse} autoComplete="email" />}</Campo>
-        
+
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <Campo rotulo="Telefone (WhatsApp)" erro={erros.telefone}>
             {(id) => <input id={id} value={f.telefone} onChange={(e) => setF({ ...f, telefone: formatarTelefone(e.target.value) })} placeholder="(48) 99999-9999" className={inputClasse} inputMode="tel" autoComplete="tel" />}
@@ -94,25 +95,23 @@ export function Cadastro() {
         <div className="border-t border-stone-100 pt-3 mt-1">
           <p className="text-[11px] font-semibold text-stone-500 uppercase mb-3">Endereço Residencial</p>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 mb-4">
-            <Campo rotulo="Cidade" erro={erros.cidade}>
-              {(id) => (
-                <select id={id} value={f.cidade} onChange={mudar('cidade')} className={inputClasse}>
-                  <option value="">Selecione a cidade</option>
-                  {CIDADES_AMUREL.map((c) => <option key={c} value={c}>{c}</option>)}
-                </select>
-              )}
-            </Campo>
+            <SeletorLocalidade
+              estado={f.estado}
+              cidade={f.cidade}
+              onMudarEstado={(estado) => setF((prev) => ({ ...prev, estado }))}
+              onMudarCidade={(cidade) => setF((prev) => ({ ...prev, cidade }))}
+              erroEstado={erros.estado}
+              erroCidade={erros.cidade}
+            />
             <Campo rotulo="Bairro" erro={erros.bairro}>{(id) => <input id={id} value={f.bairro} onChange={mudar('bairro')} className={inputClasse} />}</Campo>
-          </div>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <Campo rotulo="Rua" erro={erros.rua}>{(id) => <input id={id} value={f.rua} onChange={mudar('rua')} className={inputClasse} />}</Campo>
-            <Campo rotulo="Complemento">{(id) => <input id={id} value={f.complemento} onChange={mudar('complemento')} className={inputClasse} />}</Campo>
+            <Campo rotulo="Complemento" className="sm:col-span-2">{(id) => <input id={id} value={f.complemento} onChange={mudar('complemento')} className={inputClasse} />}</Campo>
           </div>
         </div>
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 mt-2">
           <Campo rotulo="Senha" erro={erros.senha}>{(id) => <input id={id} type="password" value={f.senha} onChange={mudar('senha')} className={inputClasse} autoComplete="new-password" />}</Campo>
-          <Campo rotulo="Confirmar senha" erro={erros.confirmar}>{(id) => <input id={id} type="password" value={f.confirmar} onChange={mudar('confirmar')} className={inputClasse} autoComplete="new-password" />}</Campo>
+          <Campo rotulo="Confirmar senha" erro={erros.confirmar}>{(id) => <input id={id} value={f.confirmar} onChange={mudar('confirmar')} type="password" className={inputClasse} autoComplete="new-password" />}</Campo>
         </div>
 
         <div>

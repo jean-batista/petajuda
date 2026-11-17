@@ -26,11 +26,6 @@ export const PORTE_ANIMAL = PORTE
 export const IDADE = { FILHOTE: 'Filhote', ADULTO: 'Adulto', IDOSO: 'Idoso' }
 export const IDADE_ANIMAL = IDADE
 
-export const CIDADES_AMUREL = [
-    'Tubarão', 'Laguna', 'Capivari de Baixo', 'Gravatal', 'Braço do Norte',
-    'Imbituba', 'Jaguaruna', 'Orleans', 'Armazém', 'São Ludgero',
-]
-
 export const SEXO = { MACHO: 'Macho', FEMEA: 'Fêmea' }
 export const SEXO_ANIMAL = SEXO
 

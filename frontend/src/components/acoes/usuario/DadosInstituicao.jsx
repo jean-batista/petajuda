@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
 import { useToast } from '../../../context/ToastContext'
-import { CIDADES_AMUREL, STATUS_ONG } from '../../../data/enums'
+import { STATUS_ONG } from '../../../data/enums'
 import { atualizarOng, buscarOng } from '../../../services/ongService'
 import { formatarCnpj, formatarTelefone, somenteDigitos } from '../../../utils/format'
+import SeletorLocalidade from '../../ui/SeletorLocalidade'
 import { Campo, Carregando, Selo, botaoPrimario, inputClasse } from '../../ui/Ui'
 
 export function DadosInstituicao({ ongId }) {
@@ -17,9 +18,18 @@ export function DadosInstituicao({ ongId }) {
       if (!o) return
       setStatus(o.status)
       setF({
-        nome: o.nome, razaoSocial: o.razaoSocial, cnpj: o.cnpj, chavePix: o.chavePix, descricao: o.descricao,
-        cidade: o.endereco?.cidade || 'Tubarão', bairro: o.endereco?.bairro || '', rua: o.endereco?.rua || '', complemento: o.endereco?.complemento || '',
-        telefone: formatarTelefone(o.contato?.telefone ?? ''), email: o.contato?.email ?? '',
+        nome: o.nome,
+        razaoSocial: o.razaoSocial,
+        cnpj: o.cnpj,
+        chavePix: o.chavePix,
+        descricao: o.descricao,
+        estado: o.endereco?.estado || 'SC',
+        cidade: o.endereco?.cidade || '',
+        bairro: o.endereco?.bairro || '',
+        rua: o.endereco?.rua || '',
+        complemento: o.endereco?.complemento || '',
+        telefone: formatarTelefone(o.contato?.telefone ?? ''),
+        email: o.contato?.email ?? '',
       })
     })
   }, [ongId])
@@ -32,12 +42,24 @@ export function DadosInstituicao({ ongId }) {
     if (!f.nome.trim() || !f.razaoSocial.trim() || !f.chavePix.trim() || f.descricao.trim().length < 20) {
       return setErro('Preencha nome, razão social, chave Pix e uma descrição de pelo menos 20 caracteres.')
     }
+    if (!f.estado || !f.cidade) {
+      return setErro('Selecione o estado e a cidade da instituição.')
+    }
     setErro('')
     setEnviando(true)
     try {
       await atualizarOng(ongId, {
-        nome: f.nome.trim(), razaoSocial: f.razaoSocial.trim(), chavePix: f.chavePix.trim(), descricao: f.descricao.trim(),
-        endereco: { estado: 'SC', cidade: f.cidade, bairro: f.bairro.trim(), rua: f.rua.trim(), complemento: f.complemento.trim() },
+        nome: f.nome.trim(),
+        razaoSocial: f.razaoSocial.trim(),
+        chavePix: f.chavePix.trim(),
+        descricao: f.descricao.trim(),
+        endereco: {
+          estado: f.estado,
+          cidade: f.cidade,
+          bairro: f.bairro.trim(),
+          rua: f.rua.trim(),
+          complemento: f.complemento.trim(),
+        },
         contato: { telefone: somenteDigitos(f.telefone), email: f.email.trim() },
       })
       toast.sucesso('Dados da instituição atualizados com sucesso!')
@@ -67,11 +89,12 @@ export function DadosInstituicao({ ongId }) {
       </div>
       <Campo rotulo="História e apresentação">{(id) => <textarea id={id} rows={3} value={f.descricao} onChange={mudar('descricao')} className={inputClasse} />}</Campo>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <Campo rotulo="Cidade">{(id) => (
-          <select id={id} value={f.cidade} onChange={mudar('cidade')} className={inputClasse}>
-            {CIDADES_AMUREL.map((c) => <option key={c} value={c}>{c}</option>)}
-          </select>
-        )}</Campo>
+        <SeletorLocalidade
+          estado={f.estado}
+          cidade={f.cidade}
+          onMudarEstado={(estado) => setF((prev) => ({ ...prev, estado }))}
+          onMudarCidade={(cidade) => setF((prev) => ({ ...prev, cidade }))}
+        />
         <Campo rotulo="Bairro">{(id) => <input id={id} value={f.bairro} onChange={mudar('bairro')} className={inputClasse} />}</Campo>
         <Campo rotulo="Rua">{(id) => <input id={id} value={f.rua} onChange={mudar('rua')} className={inputClasse} />}</Campo>
         <Campo rotulo="Complemento">{(id) => <input id={id} value={f.complemento} onChange={mudar('complemento')} className={inputClasse} />}</Campo>

@@ -1,40 +1,42 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useAuth } from '../../../context/AuthContext' // Certifique-se de que exporta o usuário atual
+import { useAuth } from '../../../context/AuthContext'
 import { cadastrarOng } from '../../../services/authService'
 import { buscarOngPorUsuario } from '../../../services/ongService'
 import { formatarCnpj, somenteDigitos } from '../../../utils/format'
+import SeletorLocalidade from '../../ui/SeletorLocalidade'
 import { botaoPrimario, Campo, inputClasse } from '../../ui/Ui'
 
 export function OngForm() {
   const navigate = useNavigate()
-  const { user } = useAuth() // Supondo que o AuthContext disponibilize o objeto 'user' com o 'id'
-  
+  const { user, usuario } = useAuth()
+  const usuarioAtual = usuario || user
+
   const [o, setO] = useState({
     nome: '',
     razaoSocial: '',
     cnpj: '',
     chavePix: '',
     descricao: '',
+    estado: 'SC',
     cidade: '',
     bairro: '',
     rua: '',
     complemento: ''
   })
-  
+
   const [erros, setErros] = useState({})
   const [erroGeral, setErroGeral] = useState('')
   const [sucesso, setSucesso] = useState('')
   const [enviando, setEnviando] = useState(false)
-  
+
   const [verificando, setVerificando] = useState(true)
   const [possuiOng, setPossuiOng] = useState(false)
   const [dadosOngExistente, setDadosOngExistente] = useState(null)
 
   useEffect(() => {
     async function verificarInstituicao() {
-      // Se por algum motivo o ID do usuário ainda não estiver carregado na sessão, encerra a checagem
-      const usuarioId = user?.id || user?.usuarioId
+      const usuarioId = usuarioAtual?.id || usuarioAtual?.usuarioId
       if (!usuarioId) {
         setVerificando(false)
         return
@@ -42,14 +44,12 @@ export function OngForm() {
 
       try {
         setVerificando(true)
-        // Chama o endpoint público passando o ID do usuário na URL
         const resposta = await buscarOngPorUsuario(usuarioId)
         if (resposta) {
           setPossuiOng(true)
           setDadosOngExistente(resposta)
         }
-      } catch (err) {
-        // Se retornar 404 (ou erro porque o usuário não tem ONG), o formulário é liberado
+      } catch {
         setPossuiOng(false)
       } finally {
         setVerificando(false)
@@ -57,25 +57,26 @@ export function OngForm() {
     }
 
     verificarInstituicao()
-  }, [user])
+  }, [usuarioAtual])
 
   function validarFormulario() {
     const e = {}
     if (!o.nome.trim()) e.nome = 'Informe o nome da instituição.'
     if (!o.razaoSocial.trim()) e.razaoSocial = 'Informe a razão social.'
-    
+
     if (somenteDigitos(o.cnpj).length !== 14) {
       e.cnpj = 'O CNPJ deve conter exatamente 14 números.'
     }
-    
+
     if (!o.chavePix.trim()) e.chavePix = 'Informe a chave Pix para doações.'
     if (o.descricao.trim().length < 20) {
       e.descricao = 'A descrição deve ter no mínimo 20 caracteres.'
     }
-    if (!o.cidade.trim()) e.cidade = 'Informe a cidade.'
+    if (!o.estado) e.estado = 'Selecione o estado.'
+    if (!o.cidade.trim()) e.cidade = 'Selecione a cidade.'
     if (!o.bairro.trim()) e.bairro = 'Informe o bairro.'
     if (!o.rua.trim()) e.rua = 'Informe a rua.'
-    
+
     return e
   }
 
@@ -97,7 +98,7 @@ export function OngForm() {
         chavePix: o.chavePix.trim(),
         descricao: o.descricao.trim(),
         endereco: {
-          estado: 'SC',
+          estado: o.estado,
           cidade: o.cidade.trim(),
           bairro: o.bairro.trim(),
           rua: o.rua.trim(),
@@ -111,7 +112,6 @@ export function OngForm() {
       setTimeout(() => {
         navigate('/acoes')
       }, 1500)
-
     } catch (err) {
       setErroGeral(err.message || 'Falha ao cadastrar a instituição. Verifique os dados.')
       setEnviando(false)
@@ -136,10 +136,7 @@ export function OngForm() {
         <p className="text-sm text-stone-600 mb-6">
           Você já possui a ONG <span className="font-semibold">{dadosOngExistente?.nome}</span> vinculada à sua conta. Cada usuário gerencia uma instituição por perfil.
         </p>
-        <button 
-          onClick={() => navigate('/acoes')}
-          className={botaoPrimario}
-        >
+        <button onClick={() => navigate('/acoes')} className={botaoPrimario}>
           Voltar para a Central de Ações
         </button>
       </div>
@@ -160,15 +157,15 @@ export function OngForm() {
           <Campo rotulo="Nome da instituição" erro={erros.nome}>
             {(id) => <input id={id} value={o.nome} onChange={(e) => setO({ ...o, nome: e.target.value })} className={inputClasse} />}
           </Campo>
-          
+
           <Campo rotulo="Razão social" erro={erros.razaoSocial}>
             {(id) => <input id={id} value={o.razaoSocial} onChange={(e) => setO({ ...o, razaoSocial: e.target.value })} className={inputClasse} />}
           </Campo>
-          
+
           <Campo rotulo="CNPJ" erro={erros.cnpj}>
             {(id) => <input id={id} value={o.cnpj} onChange={(e) => setO({ ...o, cnpj: formatarCnpj(e.target.value) })} placeholder="00.000.000/0000-00" className={inputClasse} inputMode="numeric" />}
           </Campo>
-          
+
           <Campo rotulo="Chave Pix" erro={erros.chavePix}>
             {(id) => <input id={id} value={o.chavePix} onChange={(e) => setO({ ...o, chavePix: e.target.value })} placeholder="E-mail, CPF, CNPJ ou Aleatória" className={inputClasse} />}
           </Campo>
@@ -179,27 +176,32 @@ export function OngForm() {
         </Campo>
 
         <div className="border-t border-stone-100 pt-4 mt-2">
-           <p className="text-xs font-semibold uppercase tracking-wider text-stone-500 mb-3">Endereço da Sede</p>
-           
-           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 mb-4">
-             <Campo rotulo="Cidade" erro={erros.cidade}>
-               {(id) => <input id={id} value={o.cidade} onChange={(e) => setO({ ...o, cidade: e.target.value })} placeholder="Ex: Tubarão" className={inputClasse} />}
-             </Campo>
-             
-             <Campo rotulo="Bairro" erro={erros.bairro}>
-               {(id) => <input id={id} value={o.bairro} onChange={(e) => setO({ ...o, bairro: e.target.value })} className={inputClasse} />}
-             </Campo>
-           </div>
-           
-           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-             <Campo rotulo="Rua" erro={erros.rua}>
-               {(id) => <input id={id} value={o.rua} onChange={(e) => setO({ ...o, rua: e.target.value })} className={inputClasse} />}
-             </Campo>
-             
-             <Campo rotulo="Complemento">
-               {(id) => <input id={id} value={o.complemento} onChange={(e) => setO({ ...o, complemento: e.target.value })} placeholder="Sala, Bloco, etc. (Opcional)" className={inputClasse} />}
-             </Campo>
-           </div>
+          <p className="text-xs font-semibold uppercase tracking-wider text-stone-500 mb-3">Endereço da Sede</p>
+
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 mb-4">
+            <SeletorLocalidade
+              estado={o.estado}
+              cidade={o.cidade}
+              onMudarEstado={(estado) => setO((prev) => ({ ...prev, estado }))}
+              onMudarCidade={(cidade) => setO((prev) => ({ ...prev, cidade }))}
+              erroEstado={erros.estado}
+              erroCidade={erros.cidade}
+            />
+          </div>
+
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 mb-4">
+            <Campo rotulo="Bairro" erro={erros.bairro}>
+              {(id) => <input id={id} value={o.bairro} onChange={(e) => setO({ ...o, bairro: e.target.value })} className={inputClasse} />}
+            </Campo>
+
+            <Campo rotulo="Rua" erro={erros.rua}>
+              {(id) => <input id={id} value={o.rua} onChange={(e) => setO({ ...o, rua: e.target.value })} className={inputClasse} />}
+            </Campo>
+          </div>
+
+          <Campo rotulo="Complemento">
+            {(id) => <input id={id} value={o.complemento} onChange={(e) => setO({ ...o, complemento: e.target.value })} placeholder="Sala, Bloco, etc. (Opcional)" className={inputClasse} />}
+          </Campo>
         </div>
 
         {erroGeral && <p role="alert" className="rounded-xl bg-red-50 p-3 text-sm text-red-700">{erroGeral}</p>}

@@ -1,18 +1,18 @@
 import { useState } from 'react'
 import { useAuth } from '../../../context/AuthContext'
 import { useToast } from '../../../context/ToastContext'
-import { CIDADES_AMUREL } from '../../../data/enums'
 import { atualizarPerfil } from '../../../services/authService'
 import { formatarTelefone, somenteDigitos } from '../../../utils/format'
+import SeletorLocalidade from '../../ui/SeletorLocalidade'
 import { Campo, botaoPrimario, inputClasse } from '../../ui/Ui'
 
 export function DadosPessoais() {
   const { usuario, atualizarUsuario } = useAuth()
   const toast = useToast()
-  
-  const [f, setF] = useState({ 
-    nome: usuario.nome || usuario.nomeCompleto?.split(' ')[0] || '', 
-    sobrenome: usuario.sobrenome || usuario.nomeCompleto?.split(' ').slice(1).join(' ') || '', 
+
+  const [f, setF] = useState({
+    nome: usuario.nome || usuario.nomeCompleto?.split(' ')[0] || '',
+    sobrenome: usuario.sobrenome || usuario.nomeCompleto?.split(' ').slice(1).join(' ') || '',
     telefone: formatarTelefone(usuario.telefone || ''),
     nascimento: usuario.nascimento || '',
     estado: usuario.endereco?.estado || 'SC',
@@ -21,21 +21,21 @@ export function DadosPessoais() {
     rua: usuario.endereco?.rua || '',
     complemento: usuario.endereco?.complemento || ''
   })
-  
+
   const [erro, setErro] = useState('')
   const [enviando, setEnviando] = useState(false)
 
   async function salvar(e) {
     e.preventDefault()
-    if (!f.nome.trim() || !f.sobrenome.trim() || somenteDigitos(f.telefone).length < 10 || !f.nascimento || !f.cidade.trim() || !f.bairro.trim() || !f.rua.trim()) {
-      return setErro('Preencha todos os campos obrigatórios (Nome, Sobrenome, Telefone, Nascimento e Endereço).')
+    if (!f.nome.trim() || !f.sobrenome.trim() || somenteDigitos(f.telefone).length < 10 || !f.nascimento || !f.estado || !f.cidade.trim() || !f.bairro.trim() || !f.rua.trim()) {
+      return setErro('Preencha todos os campos obrigatórios (Nome, Sobrenome, Telefone, Nascimento e Endereço completo).')
     }
     setErro('')
     setEnviando(true)
     try {
-      const response = await atualizarPerfil(usuario.id, { 
-        nome: f.nome.trim(), 
-        sobrenome: f.sobrenome.trim(), 
+      const response = await atualizarPerfil(usuario.id, {
+        nome: f.nome.trim(),
+        sobrenome: f.sobrenome.trim(),
         telefone: somenteDigitos(f.telefone),
         nascimento: f.nascimento,
         endereco: {
@@ -60,7 +60,7 @@ export function DadosPessoais() {
   return (
     <form onSubmit={salvar} className={caixa} noValidate>
       <h3 className="font-semibold text-stone-900 text-base">Dados Pessoais & Endereço</h3>
-      
+
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Campo rotulo="Nome">{(id) => <input id={id} value={f.nome} onChange={(e) => setF({ ...f, nome: e.target.value })} className={inputClasse} autoComplete="given-name" />}</Campo>
         <Campo rotulo="Sobrenome">{(id) => <input id={id} value={f.sobrenome} onChange={(e) => setF({ ...f, sobrenome: e.target.value })} className={inputClasse} autoComplete="family-name" />}</Campo>
@@ -72,17 +72,15 @@ export function DadosPessoais() {
       <div className="border-t border-stone-100 pt-4 mt-2">
         <p className="text-[11px] font-semibold text-stone-500 uppercase tracking-wider mb-3">Endereço Residencial</p>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 mb-4">
-          <Campo rotulo="Cidade">{(id) => (
-            <select id={id} value={f.cidade} onChange={(e) => setF({ ...f, cidade: e.target.value })} className={inputClasse}>
-              <option value="">Selecione a cidade</option>
-              {CIDADES_AMUREL.map((c) => <option key={c} value={c}>{c}</option>)}
-            </select>
-          )}</Campo>
+          <SeletorLocalidade
+            estado={f.estado}
+            cidade={f.cidade}
+            onMudarEstado={(estado) => setF((prev) => ({ ...prev, estado }))}
+            onMudarCidade={(cidade) => setF((prev) => ({ ...prev, cidade }))}
+          />
           <Campo rotulo="Bairro">{(id) => <input id={id} value={f.bairro} onChange={(e) => setF({ ...f, bairro: e.target.value })} className={inputClasse} />}</Campo>
-        </div>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <Campo rotulo="Rua">{(id) => <input id={id} value={f.rua} onChange={(e) => setF({ ...f, rua: e.target.value })} className={inputClasse} />}</Campo>
-          <Campo rotulo="Complemento">{(id) => <input id={id} value={f.complemento} onChange={(e) => setF({ ...f, complemento: e.target.value })} className={inputClasse} />}</Campo>
+          <Campo rotulo="Complemento" className="sm:col-span-2">{(id) => <input id={id} value={f.complemento} onChange={(e) => setF({ ...f, complemento: e.target.value })} className={inputClasse} />}</Campo>
         </div>
       </div>
 

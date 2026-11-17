@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react'
-import { MapPin, Check, CalendarDays, HeartHandshake, MessageCircle, PawPrint, Building2, Copy } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
+import { MapPin, Check, CalendarDays, HeartHandshake, MessageCircle, PawPrint, Building2, Copy, RotateCcw } from 'lucide-react'
 import { listarOngs, listarCampanhas, listarAnimaisDaOng } from '../services/ongService'
-import { CIDADES_AMUREL } from '../data/enums'
+import { listarCidadesPorEstado, listarEstados } from '../services/ibgeService'
 import { copiarTexto, formatarData, formatarCnpj, linkWhatsApp } from '../utils/format'
+import { useAuth } from '../context/AuthContext'
 import { useToast } from '../context/ToastContext'
 import Modal from '../components/ui/Modal'
 import PublicacaoCard from '../components/ui/PublicacaoCard'
@@ -104,36 +105,120 @@ function ModalOng({ ong, onFechar }) {
 }
 
 export default function Ongs() {
-  const [cidade, setCidade] = useState('')
+  const { usuario } = useAuth()
+  const estadoUsuario = usuario?.endereco?.estado || usuario?.estado || ''
+  const cidadeUsuario = usuario?.endereco?.cidade || usuario?.cidade || ''
+
+  const [estado, setEstado] = useState(estadoUsuario)
+  const [cidade, setCidade] = useState(cidadeUsuario)
+  const [estados, setEstados] = useState([])
+  const [cidades, setCidades] = useState([])
+  const [carregandoCidades, setCarregandoCidades] = useState(false)
+
   const [ongs, setOngs] = useState(null)
   const [campanhas, setCampanhas] = useState(null)
   const [selecionada, setSelecionada] = useState(null)
 
   useEffect(() => {
     let ativo = true
+    listarEstados()
+      .then((l) => ativo && setEstados(l))
+      .catch(() => ativo && setEstados([]))
+    return () => { ativo = false }
+  }, [])
+
+  useEffect(() => {
+    if (!estado) {
+      setCidades([])
+      return
+    }
+    let ativo = true
+    setCarregandoCidades(true)
+    listarCidadesPorEstado(estado)
+      .then((l) => {
+        if (ativo) {
+          setCidades(l)
+          setCarregandoCidades(false)
+        }
+      })
+      .catch(() => {
+        if (ativo) {
+          setCidades([])
+          setCarregandoCidades(false)
+        }
+      })
+    return () => { ativo = false }
+  }, [estado])
+
+  const aplicouRegiaoInicial = useRef(Boolean(estadoUsuario || cidadeUsuario))
+  useEffect(() => {
+    if (!aplicouRegiaoInicial.current && (estadoUsuario || cidadeUsuario)) {
+      aplicouRegiaoInicial.current = true
+      setEstado(estadoUsuario)
+      setCidade(cidadeUsuario)
+    }
+  }, [estadoUsuario, cidadeUsuario])
+
+  useEffect(() => {
+    let ativo = true
     setOngs(null)
     setCampanhas(null)
-    listarOngs({ cidade }).then((l) => ativo && setOngs(l || []))
-    listarCampanhas({ cidade }).then((l) => ativo && setCampanhas(l || []))
+    listarOngs({ estado, cidade }).then((l) => ativo && setOngs(l || []))
+    listarCampanhas({ estado, cidade }).then((l) => ativo && setCampanhas(l || []))
     return () => { ativo = false }
-  }, [cidade])
+  }, [estado, cidade])
+
+  function alterarEstado(novaUf) {
+    setEstado(novaUf)
+    setCidade('')
+  }
 
   return (
     <div className="flex flex-col gap-10">
-      <section className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
+      <section className="flex flex-col justify-between gap-4 lg:flex-row lg:items-end">
         <div>
           <h1 className="text-3xl font-bold text-stone-900">ONGs e protetores</h1>
-          <p className="mt-1 text-stone-500">Instituições validadas que cuidam dos animais da AMUREL.</p>
+          <p className="mt-1 text-stone-500">
+            Instituições validadas que cuidam dos animais{cidade ? ` em ${cidade}` : estado ? ` em ${estado}` : ' na sua região'}.
+          </p>
+          {(estadoUsuario || cidadeUsuario) && (estado !== estadoUsuario || cidade !== cidadeUsuario) && (
+            <button
+              type="button"
+              onClick={() => { setEstado(estadoUsuario); setCidade(cidadeUsuario) }}
+              className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-emerald-700 hover:underline"
+            >
+              <RotateCcw className="h-3.5 w-3.5" />
+              Voltar para minha região ({cidadeUsuario || estadoUsuario})
+            </button>
+          )}
         </div>
-        <select aria-label="Filtrar por cidade" value={cidade} onChange={(e) => setCidade(e.target.value)} className={`${inputClasse} sm:w-64`}>
-          <option value="">Todas as cidades</option>
-          {CIDADES_AMUREL.map((c) => <option key={c} value={c}>{c}</option>)}
-        </select>
+
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+          <select aria-label="Filtrar por estado" value={estado} onChange={(e) => alterarEstado(e.target.value)} className={`${inputClasse} sm:w-52`}>
+            <option value="">Todos os estados</option>
+            {estados.map((uf) => (
+              <option key={uf.sigla} value={uf.sigla}>{uf.nome} ({uf.sigla})</option>
+            ))}
+          </select>
+
+          <select
+            aria-label="Filtrar por cidade"
+            value={cidade}
+            onChange={(e) => setCidade(e.target.value)}
+            disabled={!estado || carregandoCidades}
+            className={`${inputClasse} sm:w-56 disabled:bg-stone-100 disabled:text-stone-400`}
+          >
+            <option value="">
+              {!estado ? 'Selecione um estado' : carregandoCidades ? 'Carregando cidades...' : 'Todas as cidades'}
+            </option>
+            {cidades.map((c) => <option key={c} value={c}>{c}</option>)}
+          </select>
+        </div>
       </section>
 
       <section>
         {ongs === null ? <Carregando texto="Carregando instituições..." /> : ongs.length === 0 ? (
-          <Vazio icone={Building2} titulo="Nenhuma ONG nesta cidade" texto="Tente outra cidade da região ou veja todas as instituições." />
+          <Vazio icone={Building2} titulo="Nenhuma ONG nesta região" texto="Tente outra cidade ou veja todas as instituições." />
         ) : (
           <div className="grid gap-6 sm:grid-cols-2">
             {ongs.map((ong) => (

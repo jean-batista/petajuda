@@ -1,20 +1,21 @@
 /**
  * @file PublicacaoForm.jsx
- * @description Formulário multi-etapas para criação e edição de publicações com upload multipart/form-data.
- * Permite vincular um animal previamente cadastrado ou informar os dados de um novo pet.
+ * @description Orquestrador do formulário multi-etapas para criação e edição de publicações.
  */
 
-import { PawPrint, Upload, X } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useToast } from '../../../context/ToastContext'
-import { ESPECIE_ANIMAL, IDADE_ANIMAL, PORTE_ANIMAL, SEXO_ANIMAL, TIPO_PUBLICACAO } from '../../../data/enums'
 import { listarMeusAnimais } from '../../../services/animalService'
 import { atualizarPublicacao, criarPublicacao } from '../../../services/publicacaoService'
-import { botaoPrimario, botaoSecundario, Campo, inputClasse } from '../../ui/Ui'
+import { botaoPrimario, botaoSecundario } from '../../ui/Ui'
+import EtapaAnimalPublicacao from './EtapaAnimalPublicacao'
+import EtapaDadosPublicacao from './EtapaDadosPublicacao'
 
 function valoresIniciais(p, usuario) {
+  const temAnimalVinculado = Boolean(p?.animal?.id ?? p?.animalId)
+
   return {
-    // Vínculo com animal existente
+    modoAnimal: temAnimalVinculado ? 'VINCULADO' : 'ENCONTRADO',
     animalId: p?.animal?.id ?? p?.animalId ?? '',
 
     // Dados do Animal
@@ -31,11 +32,11 @@ function valoresIniciais(p, usuario) {
     fotoArquivoAnimal: null,
 
     // Dados da Publicação
-    tipo: p?.tipo ?? p?.tipoPublicacao ?? (usuario?.perfil === 'ONG' ? 'ADOCAO' : 'PERDIDO'),
+    tipo: p?.tipo ?? p?.tipoPublicacao ?? (temAnimalVinculado ? (usuario?.perfil === 'ONG' ? 'ADOCAO' : 'PERDIDO') : 'ENCONTRADO'),
     titulo: p?.titulo ?? '',
     descricao: p?.descricao ?? '',
 
-    // Endereço livre (sem cidades fixas)
+    // Endereço
     cidade: p?.endereco?.cidade ?? '',
     estado: p?.endereco?.estado ?? 'SC',
     bairro: p?.endereco?.bairro ?? '',
@@ -47,7 +48,7 @@ function valoresIniciais(p, usuario) {
   }
 }
 
-export default function PublicacaoForm({ usuario, publicacao, onSalvo, onCancelar }) {
+export default function PublicacaoForm({ usuario, publicacao, onSalvo, onCancelar, onIrParaCadastroAnimal }) {
   const toast = useToast()
   const [etapa, setEtapa] = useState(1)
   const [f, setF] = useState(() => valoresIniciais(publicacao, usuario))
@@ -55,7 +56,6 @@ export default function PublicacaoForm({ usuario, publicacao, onSalvo, onCancela
   const [erros, setErros] = useState({})
   const [enviando, setEnviando] = useState(false)
 
-  // Carrega os animais previamente cadastrados para permitir vínculo rápido
   useEffect(() => {
     let ativo = true
     listarMeusAnimais()
@@ -73,7 +73,23 @@ export default function PublicacaoForm({ usuario, publicacao, onSalvo, onCancela
     [campo]: e.target.type === 'checkbox' ? e.target.checked : e.target.value
   })
 
-  // Preenche ou limpa os campos quando o usuário escolhe um pet já cadastrado
+  function alterarModoAnimal(novoModo) {
+    setErros({})
+    setF((prev) => ({
+      ...prev,
+      modoAnimal: novoModo,
+      animalId: '',
+      nome: '',
+      corPredominante: '',
+      descricaoAnimal: '',
+      fotoUrlAnimal: '',
+      fotoArquivoAnimal: null,
+      tipo: novoModo === 'ENCONTRADO'
+        ? 'ENCONTRADO'
+        : (usuario?.perfil === 'ONG' ? 'ADOCAO' : 'PERDIDO')
+    }))
+  }
+
   function selecionarAnimalExistente(e) {
     const idSelecionado = e.target.value
     if (!idSelecionado) {
@@ -106,7 +122,7 @@ export default function PublicacaoForm({ usuario, publicacao, onSalvo, onCancela
         fotoUrlAnimal: pet.fotoUrl ?? '',
         fotoArquivoAnimal: null,
       }))
-      setErros((prev) => ({ ...prev, nome: undefined, corPredominante: undefined, foto: undefined }))
+      setErros({})
     }
   }
 
@@ -123,10 +139,11 @@ export default function PublicacaoForm({ usuario, publicacao, onSalvo, onCancela
 
   function validarEtapa1() {
     const e = {}
-    // Se vinculou um animal já existente, os dados dele já estão válidos no banco
-    if (f.animalId) return e
+    if (f.modoAnimal === 'VINCULADO') {
+      if (!f.animalId) e.animalId = 'Selecione um animal da sua lista.'
+      return e
+    }
 
-    if (!f.nome.trim()) e.nome = 'Informe o nome ou apelido do animal.'
     if (!f.corPredominante.trim()) e.corPredominante = 'Informe a cor predominante.'
     if (!f.fotoUrlAnimal && !f.fotoArquivoAnimal && !publicacao) e.foto = 'A foto do animal é obrigatória.'
     return e
@@ -158,16 +175,16 @@ export default function PublicacaoForm({ usuario, publicacao, onSalvo, onCancela
     setEnviando(true)
     try {
       const formData = new FormData()
+      const isVinculado = f.modoAnimal === 'VINCULADO' && Boolean(f.animalId)
 
       const payloadPublicacao = {
         titulo: f.titulo.trim(),
         descricao: f.descricao.trim(),
         tipo: f.tipo,
-        animalId: f.animalId || null,
-        // Caso não haja animalId vinculado, envia os dados para criação conjunta (se suportado pelo endpoint)
-        ...(!f.animalId ? {
+        animalId: isVinculado ? f.animalId : null,
+        ...(!isVinculado ? {
           animal: {
-            nome: f.nome.trim(),
+            nome: f.nome.trim() || 'Animal encontrado (sem identificação)',
             especie: f.especie,
             sexo: f.sexo,
             porte: f.porte,
@@ -207,168 +224,40 @@ export default function PublicacaoForm({ usuario, publicacao, onSalvo, onCancela
     }
   }
 
-  const select = (campo, opcoes, desabilitado = false) => (id) => (
-    <select id={id} value={f[campo]} onChange={mudar(campo)} disabled={desabilitado} className={`${inputClasse} ${desabilitado ? 'bg-stone-100 text-stone-500' : ''}`}>
-      {Object.entries(opcoes).map(([valor, rotulo]) => (
-        <option key={valor} value={valor}>{typeof rotulo === 'string' ? rotulo : (rotulo.label || valor)}</option>
-      ))}
-    </select>
-  )
-
-  const vinculado = Boolean(f.animalId)
-
   return (
     <form onSubmit={enviar} className="flex flex-col gap-5" noValidate>
       <ol className="flex gap-2 text-sm font-medium">
-        {['Ficha do pet', 'Dados da publicação'].map((nome, i) => (
-          <li key={nome} className={`flex-1 rounded-xl px-3 py-2 text-center transition-colors ${etapa === i + 1 ? 'bg-emerald-600 text-white' : 'bg-stone-100 text-stone-500'}`}>
+        {['Identificação do pet', 'Dados da publicação'].map((nome, i) => (
+          <li
+            key={nome}
+            className={`flex-1 rounded-xl px-3 py-2 text-center transition-colors ${
+              etapa === i + 1 ? 'bg-emerald-600 text-white' : 'bg-stone-100 text-stone-500'
+            }`}
+          >
             {i + 1}. {nome}
           </li>
         ))}
       </ol>
 
       {etapa === 1 ? (
-        <>
-          {/* Seletor de Animal Previamente Cadastrado */}
-          <div className="rounded-xl border border-emerald-200 bg-emerald-50/50 p-4">
-            <label htmlFor="select-animal-existente" className="mb-1.5 flex items-center gap-2 text-sm font-semibold text-emerald-900">
-              <PawPrint className="h-4 w-4 text-emerald-700" />
-              Vincular animal já cadastrado (opcional)
-            </label>
-            <select
-              id="select-animal-existente"
-              value={f.animalId}
-              onChange={selecionarAnimalExistente}
-              className={inputClasse}
-            >
-              <option value="">+ Cadastrar um novo pet nesta publicação</option>
-              {animaisCadastrados.map((pet) => (
-                <option key={pet.id} value={pet.id}>
-                  {pet.nome} ({pet.especie || pet.especieAnimal} · {pet.corPredominante || 'Cor não inf.'})
-                </option>
-              ))}
-            </select>
-            {vinculado && (
-              <p className="mt-1.5 text-xs text-emerald-700">
-                Ficha preenchida automaticamente a partir do cadastro existente. Para editar os dados do pet, limpe a seleção acima.
-              </p>
-            )}
-          </div>
-
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <Campo rotulo="Nome ou Apelido" erro={erros.nome}>
-              {(id) => (
-                <input
-                  id={id}
-                  value={f.nome}
-                  onChange={mudar('nome')}
-                  disabled={vinculado}
-                  placeholder='Ex.: Thor, ou "Sem nome"'
-                  className={`${inputClasse} ${vinculado ? 'bg-stone-100 text-stone-500' : ''}`}
-                />
-              )}
-            </Campo>
-            <Campo rotulo="Espécie">{select('especie', ESPECIE_ANIMAL, vinculado)}</Campo>
-            <Campo rotulo="Sexo">{select('sexo', SEXO_ANIMAL, vinculado)}</Campo>
-            <Campo rotulo="Porte">{select('porte', PORTE_ANIMAL, vinculado)}</Campo>
-            <Campo rotulo="Idade aproximada">{select('idade', IDADE_ANIMAL, vinculado)}</Campo>
-            <Campo rotulo="Cor predominante" erro={erros.corPredominante}>
-              {(id) => (
-                <input
-                  id={id}
-                  value={f.corPredominante}
-                  onChange={mudar('corPredominante')}
-                  disabled={vinculado}
-                  placeholder="Ex.: Caramelo"
-                  className={`${inputClasse} ${vinculado ? 'bg-stone-100 text-stone-500' : ''}`}
-                />
-              )}
-            </Campo>
-          </div>
-
-          <div className="flex flex-wrap gap-6 text-sm">
-            <label className={`flex items-center gap-2 ${vinculado ? 'cursor-not-allowed text-stone-400' : 'cursor-pointer'}`}>
-              <input type="checkbox" checked={f.castrado} onChange={mudar('castrado')} disabled={vinculado} className="h-4 w-4 accent-emerald-600 rounded" /> Castrado
-            </label>
-            <label className={`flex items-center gap-2 ${vinculado ? 'cursor-not-allowed text-stone-400' : 'cursor-pointer'}`}>
-              <input type="checkbox" checked={f.vacinado} onChange={mudar('vacinado')} disabled={vinculado} className="h-4 w-4 accent-emerald-600 rounded" /> Vacinado
-            </label>
-          </div>
-
-          <Campo rotulo="Características e histórico (opcional)">
-            {(id) => (
-              <textarea
-                id={id}
-                rows={2}
-                value={f.descricaoAnimal}
-                onChange={mudar('descricaoAnimal')}
-                disabled={vinculado}
-                placeholder="Temperamento, marcas, coleira..."
-                className={`${inputClasse} ${vinculado ? 'bg-stone-100 text-stone-500' : ''}`}
-              />
-            )}
-          </Campo>
-
-          <div>
-            <p className="mb-1.5 text-sm font-medium text-stone-700">Foto do animal {!vinculado && <span className="text-rose-500">*</span>}</p>
-            {f.fotoUrlAnimal ? (
-              <div className="relative h-48 overflow-hidden rounded-xl border border-stone-300 bg-stone-100">
-                <img src={f.fotoUrlAnimal} alt="Pré-visualização" className="h-full w-full object-contain" />
-                {!vinculado && (
-                  <button type="button" onClick={() => setF({ ...f, fotoUrlAnimal: '', fotoArquivoAnimal: null })} aria-label="Remover foto"
-                    className="absolute right-2 top-2 rounded-full bg-rose-600 p-1 text-white hover:bg-rose-700">
-                    <X className="h-4 w-4" />
-                  </button>
-                )}
-              </div>
-            ) : (
-              <label className="block cursor-pointer rounded-xl border-2 border-dashed border-stone-300 p-6 text-center hover:bg-stone-50">
-                <Upload className="mx-auto h-10 w-10 text-stone-400" />
-                <span className="mt-1 block text-sm text-stone-600">Clique para escolher uma foto nítida (JPEG, PNG, WEBP)</span>
-                <input type="file" accept="image/*" onChange={escolherFotoAnimal} className="hidden" />
-              </label>
-            )}
-            {erros.foto && <p className="mt-1 text-xs text-rose-600">{erros.foto}</p>}
-          </div>
-        </>
+        <EtapaAnimalPublicacao
+          f={f}
+          setF={setF}
+          mudar={mudar}
+          erros={erros}
+          animaisCadastrados={animaisCadastrados}
+          onAlterarModo={alterarModoAnimal}
+          onSelecionarAnimal={selecionarAnimalExistente}
+          onEscolherFoto={escolherFotoAnimal}
+          onIrParaCadastroAnimal={onIrParaCadastroAnimal}
+        />
       ) : (
-        <>
-          <div>
-            <p className="mb-1.5 text-sm font-medium text-stone-700">Tipo de publicação</p>
-            <div className="grid grid-cols-3 gap-2">
-              {Object.entries(TIPO_PUBLICACAO).map(([valor, tipo]) => (
-                <button key={valor} type="button" onClick={() => setF({ ...f, tipo: valor })}
-                  className={`rounded-xl border p-3 text-sm font-semibold transition ${
-                    f.tipo === valor ? 'border-emerald-600 bg-emerald-50 text-emerald-700' : 'border-stone-300 hover:bg-stone-50'
-                  }`}>
-                  {tipo.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <Campo rotulo="Título" erro={erros.titulo}>
-            {(id) => <input id={id} value={f.titulo} onChange={mudar('titulo')} placeholder="Ex.: Cão caramelo perdido no Centro" className={inputClasse} />}
-          </Campo>
-          <Campo rotulo="Descrição do ocorrido" erro={erros.descricao}>
-            {(id) => <textarea id={id} rows={3} value={f.descricao} onChange={mudar('descricao')} placeholder="Onde e quando foi visto, como está..." className={inputClasse} />}
-          </Campo>
-
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <Campo rotulo="Cidade" erro={erros.cidade}>
-              {(id) => <input id={id} value={f.cidade} onChange={mudar('cidade')} placeholder="Digite o nome da cidade" className={inputClasse} />}
-            </Campo>
-            <Campo rotulo="Bairro" erro={erros.bairro}>
-              {(id) => <input id={id} value={f.bairro} onChange={mudar('bairro')} placeholder="Ex.: Centro" className={inputClasse} />}
-            </Campo>
-            <Campo rotulo="Rua">
-              {(id) => <input id={id} value={f.rua} onChange={mudar('rua')} placeholder="Nome da rua ou avenida" className={inputClasse} />}
-            </Campo>
-            <Campo rotulo="Ponto de referência (opcional)">
-              {(id) => <input id={id} value={f.complemento} onChange={mudar('complemento')} placeholder="Próximo a..." className={inputClasse} />}
-            </Campo>
-          </div>
-        </>
+        <EtapaDadosPublicacao
+          f={f}
+          setF={setF}
+          mudar={mudar}
+          erros={erros}
+        />
       )}
 
       <div className="flex justify-between gap-3 pt-2">
@@ -377,6 +266,7 @@ export default function PublicacaoForm({ usuario, publicacao, onSalvo, onCancela
         ) : (
           <button type="button" onClick={() => setEtapa(1)} className={botaoSecundario}>Voltar</button>
         )}
+
         {etapa === 1 ? (
           <button type="button" onClick={avancar} className={botaoPrimario}>Próxima etapa</button>
         ) : (

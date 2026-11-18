@@ -28,7 +28,7 @@ function valoresIniciais(p, usuario) {
     castrado: p?.animal?.castrado ?? false,
     vacinado: p?.animal?.vacinado ?? false,
     descricaoAnimal: p?.animal?.descricao ?? '',
-    fotoUrlAnimal: p?.animal?.fotoUrl ?? '',
+    fotoUrlAnimal: p?.animal?.fotoUrl ?? p?.fotoUrl ?? '',
     fotoArquivoAnimal: null,
 
     // Dados da Publicação
@@ -50,7 +50,10 @@ function valoresIniciais(p, usuario) {
 
 export default function PublicacaoForm({ usuario, publicacao, onSalvo, onCancelar, onIrParaCadastroAnimal }) {
   const toast = useToast()
-  const [etapa, setEtapa] = useState(1)
+  const isEdicao = Boolean(publicacao)
+
+  // Na edição, abre direto na etapa dos dados da publicação
+  const [etapa, setEtapa] = useState(isEdicao ? 2 : 1)
   const [f, setF] = useState(() => valoresIniciais(publicacao, usuario))
   const [animaisCadastrados, setAnimaisCadastrados] = useState([])
   const [erros, setErros] = useState({})
@@ -130,11 +133,11 @@ export default function PublicacaoForm({ usuario, publicacao, onSalvo, onCancela
     const arquivo = e.target.files?.[0]
     e.target.value = ''
     if (!arquivo) return
-    setF({
-      ...f,
+    setF((prev) => ({
+      ...prev,
       fotoArquivoAnimal: arquivo,
       fotoUrlAnimal: URL.createObjectURL(arquivo)
-    })
+    }))
   }
 
   function validarEtapa1() {
@@ -158,7 +161,8 @@ export default function PublicacaoForm({ usuario, publicacao, onSalvo, onCancela
     return e
   }
 
-  function avancar() {
+  function avancar(ev) {
+    ev?.preventDefault()
     const e = validarEtapa1()
     setErros(e)
     if (!Object.keys(e).length) setEtapa(2)
@@ -166,7 +170,7 @@ export default function PublicacaoForm({ usuario, publicacao, onSalvo, onCancela
 
   async function enviar(ev) {
     ev.preventDefault()
-    if (etapa === 1) return avancar()
+    if (etapa === 1) return avancar(ev)
 
     const e = validarEtapa2()
     setErros(e)
@@ -182,7 +186,7 @@ export default function PublicacaoForm({ usuario, publicacao, onSalvo, onCancela
         descricao: f.descricao.trim(),
         tipo: f.tipo,
         animalId: isVinculado ? f.animalId : null,
-        ...(!isVinculado ? {
+        ...(!isVinculado && !isEdicao ? {
           animal: {
             nome: f.nome.trim() || 'Animal encontrado (sem identificação)',
             especie: f.especie,
@@ -212,11 +216,11 @@ export default function PublicacaoForm({ usuario, publicacao, onSalvo, onCancela
         formData.append('foto', f.fotoArquivoAnimal)
       }
 
-      const salva = publicacao
+      const salva = isEdicao
         ? await atualizarPublicacao(publicacao.id, formData)
         : await criarPublicacao(formData)
 
-      toast.sucesso(publicacao ? 'Publicação atualizada com sucesso!' : 'Publicação criada e publicada no feed!')
+      toast.sucesso(isEdicao ? 'Publicação atualizada com sucesso!' : 'Publicação criada e publicada no feed!')
       onSalvo?.(salva)
     } catch (err) {
       toast.erro(err.message || 'Erro ao salvar publicação.')
@@ -226,18 +230,20 @@ export default function PublicacaoForm({ usuario, publicacao, onSalvo, onCancela
 
   return (
     <form onSubmit={enviar} className="flex flex-col gap-5" noValidate>
-      <ol className="flex gap-2 text-sm font-medium">
-        {['Identificação do pet', 'Dados da publicação'].map((nome, i) => (
-          <li
-            key={nome}
-            className={`flex-1 rounded-xl px-3 py-2 text-center transition-colors ${
-              etapa === i + 1 ? 'bg-emerald-600 text-white' : 'bg-stone-100 text-stone-500'
-            }`}
-          >
-            {i + 1}. {nome}
-          </li>
-        ))}
-      </ol>
+      {!isEdicao && (
+        <ol className="flex gap-2 text-sm font-medium">
+          {['Identificação do pet', 'Dados da publicação'].map((nome, i) => (
+            <li
+              key={nome}
+              className={`flex-1 rounded-xl px-3 py-2 text-center transition-colors ${
+                etapa === i + 1 ? 'bg-emerald-600 text-white' : 'bg-stone-100 text-stone-500'
+              }`}
+            >
+              {i + 1}. {nome}
+            </li>
+          ))}
+        </ol>
+      )}
 
       {etapa === 1 ? (
         <EtapaAnimalPublicacao
@@ -257,21 +263,32 @@ export default function PublicacaoForm({ usuario, publicacao, onSalvo, onCancela
           setF={setF}
           mudar={mudar}
           erros={erros}
+          isEdicao={isEdicao}
         />
       )}
 
       <div className="flex justify-between gap-3 pt-2">
-        {etapa === 1 ? (
-          onCancelar ? <button type="button" onClick={onCancelar} className={botaoSecundario}>Cancelar</button> : <span />
+        {etapa === 1 || isEdicao ? (
+          onCancelar ? (
+            <button key="btn-cancelar" type="button" onClick={onCancelar} className={botaoSecundario}>
+              Cancelar
+            </button>
+          ) : (
+            <span />
+          )
         ) : (
-          <button type="button" onClick={() => setEtapa(1)} className={botaoSecundario}>Voltar</button>
+          <button key="btn-voltar" type="button" onClick={() => setEtapa(1)} className={botaoSecundario}>
+            Voltar
+          </button>
         )}
 
         {etapa === 1 ? (
-          <button type="button" onClick={avancar} className={botaoPrimario}>Próxima etapa</button>
+          <button key="btn-avancar" type="button" onClick={avancar} className={botaoPrimario}>
+            Próxima etapa
+          </button>
         ) : (
-          <button type="submit" disabled={enviando} className={botaoPrimario}>
-            {enviando ? 'Salvando...' : publicacao ? 'Salvar alterações' : 'Publicar'}
+          <button key="btn-salvar" type="submit" disabled={enviando} className={botaoPrimario}>
+            {enviando ? 'Salvando...' : isEdicao ? 'Salvar alterações' : 'Publicar'}
           </button>
         )}
       </div>

@@ -3,11 +3,12 @@
  * @description Etapa 2 do formulário de publicação: categoria, título, descrição do ocorrido e endereço.
  */
 
+import { Upload, X } from 'lucide-react'
 import { TIPO_PUBLICACAO } from '../../../data/enums'
 import SeletorLocalidade from '../../ui/SeletorLocalidade'
 import { Campo, inputClasse } from '../../ui/Ui'
 
-export default function EtapaDadosPublicacao({ f, setF, mudar, erros }) {
+export default function EtapaDadosPublicacao({ f, setF, mudar, erros, isEdicao = false }) {
   const vinculado = f.modoAnimal === 'VINCULADO'
 
   const tiposDisponiveis = Object.entries(TIPO_PUBLICACAO).filter(([valor]) =>
@@ -15,6 +16,17 @@ export default function EtapaDadosPublicacao({ f, setF, mudar, erros }) {
   )
 
   const listaTipos = tiposDisponiveis.length > 0 ? tiposDisponiveis : Object.entries(TIPO_PUBLICACAO)
+
+  function escolherFotoPublicacao(e) {
+    const arquivo = e.target.files?.[0]
+    e.target.value = ''
+    if (!arquivo) return
+    setF((prev) => ({
+      ...prev,
+      fotoArquivoPub: arquivo,
+      fotoUrlPub: URL.createObjectURL(arquivo),
+    }))
+  }
 
   return (
     <>
@@ -110,6 +122,33 @@ export default function EtapaDadosPublicacao({ f, setF, mudar, erros }) {
           )}
         </Campo>
       </div>
+
+      {isEdicao && !vinculado && (
+        <div>
+          <p className="mb-1.5 text-sm font-medium text-stone-700">Foto da publicação</p>
+          {f.fotoUrlPub ? (
+            <div className="relative h-44 overflow-hidden rounded-xl border border-stone-300 bg-stone-100">
+              <img src={f.fotoUrlPub} alt="Pré-visualização" className="h-full w-full object-contain" />
+              <button
+                type="button"
+                onClick={() => setF((prev) => ({ ...prev, fotoUrlPub: '', fotoArquivoPub: null }))}
+                aria-label="Remover foto"
+                className="absolute right-2 top-2 rounded-full bg-rose-600 p-1 text-white hover:bg-rose-700"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+          ) : (
+            <label className="block cursor-pointer rounded-xl border-2 border-dashed border-stone-300 p-5 text-center hover:bg-stone-50">
+              <Upload className="mx-auto h-8 w-8 text-stone-400" />
+              <span className="mt-1 block text-sm text-stone-600">
+                Escolher nova foto (opcional)
+              </span>
+              <input type="file" accept="image/*" onChange={escolherFotoPublicacao} className="hidden" />
+            </label>
+          )}
+        </div>
+      )}
     </>
   )
 }

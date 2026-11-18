@@ -7,9 +7,30 @@ import { METHOD_TYPE } from '../data/enums'
 
 export async function listarOngs(filtros = {}) {
   try {
-    const ongs = await api.get('/ongs')
+    const [ongs, publicacoes] = await Promise.all([
+      api.get('/ongs'),
+      api.get('/publicacoes').catch(() => []),
+    ])
+
     if (!Array.isArray(ongs)) return []
-    return ongs.filter((o) => (o.status === 'APROVADA') && (!filtros.cidade || o.endereco?.cidade === filtros.cidade))
+    const listaPubs = Array.isArray(publicacoes) ? publicacoes : []
+
+    return ongs
+      .filter((o) => {
+        const aprovada = !o.status || o.status === 'APROVADA'
+        const atendeEstado = !filtros.estado || o.endereco?.estado === filtros.estado
+        const atendeCidade = !filtros.cidade || o.endereco?.cidade === filtros.cidade
+        return aprovada && atendeEstado && atendeCidade
+      })
+      .map((o) => {
+        const totalAnimais = listaPubs.filter(
+          (p) =>
+            p.usuarioId === o.usuarioId &&
+            p.tipo === 'ADOCAO' &&
+            (!p.status || p.status === 'ATIVO' || p.status === 'ATIVA' || p.status === 'DISPONIVEL')
+        ).length
+        return { ...o, totalAnimais }
+      })
   } catch (err) {
     console.error('Erro em listarOngs:', err)
     return []
@@ -25,20 +46,23 @@ export async function buscarOng(id) {
   }
 }
 
-/**
- * Busca a ONG pública vinculada ao ID de um usuário.
- * @param {number|string} id ID do usuário
- */
 export async function buscarOngPorUsuario(id) {
   return await api(`/ongs/usuario/${id}`, {}, 'Erro ao buscar dados da instituição.')
 }
 
-export async function listarAnimaisDaOng(ongId) {
+export async function listarAnimaisDaOng(ongOuId) {
   try {
+    const ong = typeof ongOuId === 'object' ? ongOuId : await buscarOng(ongOuId)
+    if (!ong) return []
+
     const publicacoes = await api('/publicacoes')
     if (!Array.isArray(publicacoes)) return []
+
     return publicacoes.filter(
-      (p) => p.ongId === ongId && p.status === 'ATIVO' && p.tipo === 'ADOCAO'
+      (p) =>
+        (p.usuarioId === ong.usuarioId || p.ongId === ong.id) &&
+        p.tipo === 'ADOCAO' &&
+        (!p.status || p.status === 'ATIVO' || p.status === 'ATIVA' || p.status === 'DISPONIVEL')
     )
   } catch {
     return []
@@ -47,13 +71,29 @@ export async function listarAnimaisDaOng(ongId) {
 
 export async function listarCampanhas(filtros = {}) {
   try {
-    const campanhas = await api('/campanhas')
+    const precisaFiltrarLocal = Boolean(filtros.estado || filtros.cidade)
+    const [campanhas, ongs] = await Promise.all([
+      api('/campanhas'),
+      precisaFiltrarLocal ? api('/ongs').catch(() => []) : Promise.resolve([]),
+    ])
+
     if (!Array.isArray(campanhas)) return []
+    const mapaOngs = new Map((Array.isArray(ongs) ? ongs : []).map((o) => [o.id, o]))
+
     return campanhas.filter((c) => {
       const atendeAtivo = c.ativo !== false
       const atendeOngId = !filtros.ongId || c.ongId === filtros.ongId
-      const atendeCidade = !filtros.cidade || c.cidade === filtros.cidade
-      return atendeAtivo && atendeOngId && atendeCidade
+
+      if (!precisaFiltrarLocal) return atendeAtivo && atendeOngId
+
+      const ong = mapaOngs.get(c.ongId)
+      const estadoCampanha = c.estado || c.endereco?.estado || ong?.endereco?.estado
+      const cidadeCampanha = c.cidade || c.endereco?.cidade || ong?.endereco?.cidade
+
+      const atendeEstado = !filtros.estado || estadoCampanha === filtros.estado
+      const atendeCidade = !filtros.cidade || cidadeCampanha === filtros.cidade
+
+      return atendeAtivo && atendeOngId && atendeEstado && atendeCidade
     })
   } catch {
     return []
@@ -73,15 +113,31 @@ export async function listarCampanhasDaOng(ongId) {
 export async function criarCampanha(ongId, campanha) {
   return await api('/campanhas', {
     method: METHOD_TYPE.POST,
-    body: { ...campanha, ongId }
+    body: {
+      titulo: campanha.titulo,
+      descricao: campanha.descricao,
+      inicio: campanha.inicio,
+      fim: campanha.fim,
+    }
   }, 'Falha ao criar campanha solidária.')
 }
 
 export async function atualizarCampanha(id, campos) {
   return await api(`/campanhas/${id}`, {
     method: METHOD_TYPE.PUT,
-    body: campos
+    body: {
+      titulo: campos.titulo,
+      descricao: campos.descricao,
+      inicio: campos.inicio,
+      fim: campos.fim,
+    }
   }, 'Falha ao atualizar a campanha.')
+}
+
+export async function alterarStatusCampanha(id, ativo) {
+  return await api(`/campanhas/${id}/status?ativo=${ativo}`, {
+    method: 'PATCH'
+  }, 'Falha ao alterar o status da campanha.')
 }
 
 export async function atualizarOng(id, dados) {

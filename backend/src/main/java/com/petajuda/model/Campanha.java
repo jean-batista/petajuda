@@ -3,6 +3,7 @@ package com.petajuda.model;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.springframework.format.annotation.DateTimeFormat;
 
 import jakarta.persistence.Column;
@@ -46,6 +47,7 @@ public class Campanha {
     private Boolean ativo;
 
     // Ong vinculada a camapanha
+    @JsonIgnore
     @ManyToOne
     @JoinColumn(name = "ong_id", nullable = false)
     private Ong ong;

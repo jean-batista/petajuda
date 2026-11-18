@@ -141,10 +141,14 @@ function Painel({ perfil, abaInicial }) {
   )
 }
 
+// No componente Acoes (linha final de Acoes.jsx):
 export default function Acoes() {
   const { usuario, pronto } = useAuth()
   const location = useLocation()
-  const perfil = usuario?.perfil ?? 'VISITANTE'
+  const temOng = Boolean(usuario?.ongId || usuario?.ong?.id)
+  const perfil = usuario
+    ? (usuario.perfil === 'ADMIN' ? 'ADMIN' : (temOng || usuario.perfil === 'ONG' ? 'ONG' : 'USUARIO_COMUM'))
+    : 'VISITANTE'
 
   if (!pronto) return <Carregando />
 
@@ -156,7 +160,7 @@ export default function Acoes() {
           {usuario ? <>Olá, {usuario.nome || usuario.nomeCompleto?.split(' ')[0]}! Você está como <strong>{PERFIL[perfil] || perfil}</strong>.</> : 'Faça uma denúncia anônima ou entre para gerenciar suas publicações.'}
         </p>
       </div>
-      <Painel key={`${perfil}-${usuario?.id}`} perfil={perfil} abaInicial={location.state?.aba} />
+      <Painel key={`${perfil}-${usuario?.id}-${usuario?.ongId || ''}`} perfil={perfil} abaInicial={location.state?.aba} />
     </div>
   )
 }

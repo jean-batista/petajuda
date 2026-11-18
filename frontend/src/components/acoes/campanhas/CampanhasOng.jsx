@@ -1,10 +1,11 @@
 import { Megaphone, Pencil, PlusCircle, Power } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 import { useToast } from '../../../context/ToastContext'
-import { atualizarCampanha, criarCampanha, listarCampanhasDaOng } from '../../../services/ongService'
+import { alterarStatusCampanha, atualizarCampanha, criarCampanha, listarCampanhasDaOng } from '../../../services/ongService'
 import { formatarData } from '../../../utils/format'
 import Modal from '../../ui/Modal'
 import { botaoPrimario, botaoSecundario, Carregando, Selo, Vazio } from '../../ui/Ui'
+import { FormCampanha } from './FormCampanha'
 
 export function CampanhasOng({ ongId }) {
   const toast = useToast()
@@ -26,9 +27,10 @@ export function CampanhasOng({ ongId }) {
     }
   }
 
+  // E na função alternar(c):
   async function alternar(c) {
     try {
-      await atualizarCampanha(c.id, { ativo: !c.ativo })
+      await alterarStatusCampanha(c.id, !c.ativo)
       toast.sucesso?.(c.ativo ? 'Campanha desativada.' : 'Campanha ativada.')
       carregar()
     } catch (err) {
@@ -49,28 +51,33 @@ export function CampanhasOng({ ongId }) {
         <Vazio icone={Megaphone} titulo="Nenhuma campanha ainda" texto="Divulgue feiras de adoção, vaquinhas e mutirões de castração." />
       ) : (
         <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {lista.map((c) => (
-            <li key={c.id} className="flex flex-col gap-3 rounded-2xl border border-stone-200 bg-white p-5 shadow-sm hover:shadow-md transition-shadow">
-              <div className="flex items-start justify-between gap-2">
-                <h4 className="font-bold text-stone-800 leading-tight">{c.titulo}</h4>
-                <Selo classe={`border ${c.ativo ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-stone-50 text-stone-600 border-stone-200'}`}>
-                  {c.ativo ? 'Ativa' : 'Inativa'}
-                </Selo>
-              </div>
-              <p className="text-sm text-stone-600 leading-relaxed flex-1">{c.descricao}</p>
-              <p className="text-[11px] font-medium text-stone-500 bg-stone-50 px-2.5 py-1.5 rounded-lg w-fit border border-stone-100">
-                {formatarData(c.dataInicio)} até {formatarData(c.dataFim)}
-              </p>
-              <div className="mt-2 flex gap-2 pt-4 border-t border-stone-100">
-                <button onClick={() => setEditando(c)} className={`${botaoSecundario} !px-3 !py-1.5 flex items-center justify-center gap-1.5 flex-1`}>
-                  <Pencil className="h-4 w-4" /> Editar
-                </button>
-                <button onClick={() => alternar(c)} className={`${botaoSecundario} !px-3 !py-1.5 flex items-center justify-center gap-1.5 flex-1`}>
-                  <Power className="h-4 w-4 text-stone-500" /> {c.ativo ? 'Desativar' : 'Ativar'}
-                </button>
-              </div>
-            </li>
-          ))}
+          {lista.map((c) => {
+            const dataInicio = c.inicio ?? c.dataInicio
+            const dataFim = c.fim ?? c.dataFim
+
+            return (
+              <li key={c.id} className="flex flex-col gap-3 rounded-2xl border border-stone-200 bg-white p-5 shadow-sm hover:shadow-md transition-shadow">
+                <div className="flex items-start justify-between gap-2">
+                  <h4 className="font-bold text-stone-800 leading-tight">{c.titulo}</h4>
+                  <Selo classe={`border ${c.ativo ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-stone-50 text-stone-600 border-stone-200'}`}>
+                    {c.ativo ? 'Ativa' : 'Inativa'}
+                  </Selo>
+                </div>
+                <p className="text-sm text-stone-600 leading-relaxed flex-1">{c.descricao}</p>
+                <p className="text-[11px] font-medium text-stone-500 bg-stone-50 px-2.5 py-1.5 rounded-lg w-fit border border-stone-100">
+                  {formatarData(dataInicio)} até {formatarData(dataFim)}
+                </p>
+                <div className="mt-2 flex gap-2 pt-4 border-t border-stone-100">
+                  <button onClick={() => setEditando(c)} className={`${botaoSecundario} !px-3 !py-1.5 flex items-center justify-center gap-1.5 flex-1`}>
+                    <Pencil className="h-4 w-4" /> Editar
+                  </button>
+                  <button onClick={() => alternar(c)} className={`${botaoSecundario} !px-3 !py-1.5 flex items-center justify-center gap-1.5 flex-1`}>
+                    <Power className="h-4 w-4 text-stone-500" /> {c.ativo ? 'Desativar' : 'Ativar'}
+                  </button>
+                </div>
+              </li>
+            )
+          })}
         </ul>
       )}
       

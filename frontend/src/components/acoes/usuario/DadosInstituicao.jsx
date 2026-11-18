@@ -51,6 +51,7 @@ export function DadosInstituicao({ ongId }) {
       await atualizarOng(ongId, {
         nome: f.nome.trim(),
         razaoSocial: f.razaoSocial.trim(),
+        cnpj: somenteDigitos(f.cnpj),
         chavePix: f.chavePix.trim(),
         descricao: f.descricao.trim(),
         endereco: {

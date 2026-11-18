@@ -14,9 +14,11 @@ export default function MeuPerfil() {
   const { usuario } = useAuth()
   if (!usuario) return <Carregando />
 
+  const ongId = usuario.ongId || usuario.ong?.id
+
   return (
     <div className="flex flex-col gap-5">
-      {usuario.perfil === 'ONG' && <DadosInstituicao ongId={usuario.ongId} />}
+      {ongId && <DadosInstituicao ongId={ongId} />}
       <DadosPessoais />
       <TrocarSenha />
     </div>

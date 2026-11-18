@@ -35,14 +35,17 @@ function BoxPix({ chave }) {
 }
 
 function CardCampanha({ campanha }) {
+  const inicio = campanha.inicio ?? campanha.dataInicio
+  const fim = campanha.fim ?? campanha.dataFim
+
   return (
     <article className="rounded-2xl border border-amber-200 bg-amber-50/60 p-5 shadow-sm">
       <h3 className="font-semibold text-amber-900">{campanha.titulo}</h3>
       <p className="mt-1 text-sm text-stone-700">{campanha.descricao}</p>
       <p className="mt-3 flex flex-wrap items-center gap-x-1 text-xs font-medium text-stone-600 bg-white/60 px-2.5 py-1.5 rounded-lg w-fit border border-amber-100">
         <CalendarDays className="h-3.5 w-3.5 text-amber-700" />
-        {formatarData(campanha.dataInicio)}
-        {campanha.dataFim !== campanha.dataInicio && ` até ${formatarData(campanha.dataFim)}`}
+        {formatarData(inicio)}
+        {fim && fim !== inicio && ` até ${formatarData(fim)}`}
         {campanha.ongNome && ` · ${campanha.ongNome}`}
       </p>
     </article>
@@ -55,10 +58,10 @@ function ModalOng({ ong, onFechar }) {
 
   useEffect(() => {
     let ativo = true
-    listarAnimaisDaOng(ong.id).then((l) => ativo && setAnimais(l || []))
+    listarAnimaisDaOng(ong).then((l) => ativo && setAnimais(l || []))
     listarCampanhas({ ongId: ong.id }).then((l) => ativo && setCampanhas(l || []))
     return () => { ativo = false }
-  }, [ong.id])
+  }, [ong])
 
   return (
     <Modal titulo={ong.nome} tamanho="lg" onFechar={onFechar}>

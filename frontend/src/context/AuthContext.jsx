@@ -7,6 +7,7 @@
 import { createContext, useCallback, useContext, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import * as authService from '../services/authService'
+import { buscarOngPorUsuario } from '../services/ongService'
 
 const AuthContext = createContext(null)
 export const useAuth = () => useContext(AuthContext)
@@ -14,18 +15,17 @@ export const useAuth = () => useContext(AuthContext)
 const CHAVE_TOKEN = 'petajuda_token'
 const CHAVE_USUARIO = 'petajuda:usuario'
 
-/**
- * Normaliza o objeto de usuário retornado pelo backend Spring Boot
- * garantindo compatibilidade com as propriedades esperadas pelos componentes React.
- */
 function normalizarUsuario(dados) {
   if (!dados) return null
   const u = dados.usuario || dados
-  const perfil = u.perfil || u.tipoPerfil || (u.ongId ? 'ONG' : 'USUARIO_COMUM')
+  const ongId = u.ongId || u.ong?.id || null
+  const perfilBase = u.perfil || u.tipoPerfil || (ongId ? 'ONG' : 'USUARIO_COMUM')
+  const perfil = perfilBase !== 'ADMIN' && ongId ? 'ONG' : perfilBase
   const nome = u.nome || u.nomeCompleto?.split(' ')[0] || 'Usuário'
 
   return {
     ...u,
+    ongId,
     nome,
     perfil,
     tipoPerfil: perfil,
@@ -47,27 +47,45 @@ export function AuthProvider({ children }) {
     } catch { /* ignora erro de storage */ }
   }, [])
 
-  const guardarSessao = useCallback((resposta) => {
+  const enriquecerComOng = useCallback(async (u) => {
+    if (!u?.id || u.perfil === 'ADMIN') return u
+    try {
+      const ong = await buscarOngPorUsuario(u.id)
+      if (ong?.id) {
+        return normalizarUsuario({ ...u, ongId: ong.id, ong, perfil: 'ONG' })
+      }
+    } catch {
+      // Usuário não possui ONG vinculada
+    }
+    return u
+  }, [])
+
+  const guardarSessao = useCallback(async (resposta) => {
     if (!resposta) {
       limparSessaoLocal()
       return null
     }
 
     const token = resposta.token || resposta.accessToken
-    const usuarioNormalizado = normalizarUsuario(resposta)
+    try {
+      if (token) localStorage.setItem(CHAVE_TOKEN, token)
+    } catch { /* ignora erro de storage */ }
+
+    let usuarioNormalizado = normalizarUsuario(resposta)
+    if (usuarioNormalizado && !usuarioNormalizado.ongId) {
+      usuarioNormalizado = await enriquecerComOng(usuarioNormalizado)
+    }
 
     setUsuario(usuarioNormalizado)
     try {
-      if (token) localStorage.setItem(CHAVE_TOKEN, token)
       if (usuarioNormalizado) {
         localStorage.setItem(CHAVE_USUARIO, JSON.stringify(usuarioNormalizado))
       }
     } catch { /* ignora erro de storage */ }
 
     return usuarioNormalizado
-  }, [limparSessaoLocal])
+  }, [enriquecerComOng, limparSessaoLocal])
 
-  // Restaura a sessão validando o token JWT salvo com a API via authService
   useEffect(() => {
     let ativo = true
 
@@ -89,23 +107,20 @@ export function AuthProvider({ children }) {
         return
       }
 
-      // Hidrata imediatamente com o cache para evitar flash de tela em branco
       if (cacheUsuario && ativo) {
         setUsuario(normalizarUsuario(cacheUsuario))
       }
 
       try {
-        // Chama o authService para validar o token no endpoint /usuarios/me
         const perfilAtualizado = await authService.obterPerfilLogado()
         if (ativo) {
           if (perfilAtualizado) {
-            guardarSessao(perfilAtualizado)
+            await guardarSessao(perfilAtualizado)
           } else {
             limparSessaoLocal()
           }
         }
       } catch {
-        // Token expirado ou inválido no backend
         if (ativo) limparSessaoLocal()
       } finally {
         if (ativo) setPronto(true)
@@ -116,8 +131,8 @@ export function AuthProvider({ children }) {
     return () => { ativo = false }
   }, [guardarSessao, limparSessaoLocal])
 
-  const concluirAcesso = (resposta, rotaPadrao) => {
-    guardarSessao(resposta)
+  const concluirAcesso = async (resposta, rotaPadrao) => {
+    await guardarSessao(resposta)
     setModal(null)
     if (destino) {
       navigate(destino.rota, { state: destino.estado })
@@ -162,10 +177,17 @@ export function AuthProvider({ children }) {
     abrirModal,
     fecharModal,
     exigirLogin,
-    // Integração direta com o authService seguindo o padrão estabelecido:
     entrar: async (email, senha) => concluirAcesso(await authService.login(email, senha)),
     cadastrar: async (dados) => concluirAcesso(await authService.cadastrarUsuario(dados)),
-    cadastrarOng: async (dados) => concluirAcesso(await authService.cadastrarOng(dados), '/acoes'),
+    cadastrarOng: async (dados) => {
+      const ongCriada = await authService.cadastrarOng(dados)
+      if (ongCriada?.id) {
+        atualizarUsuario({ ongId: ongCriada.id, ong: ongCriada, perfil: 'ONG' })
+      }
+      setModal(null)
+      navigate('/acoes')
+      return ongCriada
+    },
     sair,
     atualizarUsuario,
   }

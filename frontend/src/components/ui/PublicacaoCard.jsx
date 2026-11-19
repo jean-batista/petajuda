@@ -14,7 +14,11 @@ export default function PublicacaoCard({ publicacao }) {
   
   // Suporta tanto 'tipo' quanto 'tipoPublicacao' vindos do backend
   const tipoChave = publicacao.tipo || publicacao.tipoPublicacao || 'PERDIDO'
-  const tipo = TIPO_PUBLICACAO[tipoChave] || { label: tipoChave, classe: 'bg-stone-100 text-stone-800' }
+  const tipo = TIPO_PUBLICACAO[tipoChave] || {
+    label: tipoChave,
+    classe: 'bg-stone-100 text-stone-800',
+    botaoClasse: 'bg-emerald-600 hover:bg-emerald-700',
+  }
 
   // Fallback seguro para espécie e porte utilizando os Enums atualizados
   const especieChave = animal.especie || animal.especieAnimal || 'CACHORRO'
@@ -54,7 +58,7 @@ export default function PublicacaoCard({ publicacao }) {
 
         <Link
           to={`/publicacoes/${publicacao.id}`}
-          className="mt-3 rounded-xl bg-emerald-600 py-2 text-center font-semibold text-white transition hover:bg-emerald-700 shadow-sm"
+          className={`mt-3 rounded-xl py-2 text-center font-semibold text-white transition shadow-sm ${tipo.botaoClasse}`}
         >
           Ver detalhes
         </Link>

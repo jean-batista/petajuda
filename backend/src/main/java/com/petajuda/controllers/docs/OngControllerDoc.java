@@ -3,6 +3,7 @@ package com.petajuda.controllers.docs;
 import java.util.List;
 import java.util.UUID;
 
+import io.swagger.v3.oas.annotations.media.Content;
 import org.springframework.http.ResponseEntity;
 
 import com.petajuda.dtos.request.OngRequest;
@@ -15,6 +16,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.web.bind.annotation.PathVariable;
 
 @Tag(name = "ONGs", description = "Endpoints para cadastro e gestão de perfis institucionais de ONGs")
 public interface OngControllerDoc {
@@ -34,6 +36,18 @@ public interface OngControllerDoc {
         @ApiResponse(responseCode = "404", description = "ONG não encontrada")
     })
     ResponseEntity<OngResponse> buscarPorId(@Parameter(description = "ID da ONG") UUID id);
+
+    @Operation(
+            summary = "Busca uma ONG pelo ID do usuário responsável",
+            description = "Retorna os dados da instituição vinculada ao ID do usuário informado."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "ONG encontrada com sucesso."),
+            @ApiResponse(responseCode = "404", description = "Nenhuma ONG encontrada para o usuário informado.", content = @Content)
+    })
+    ResponseEntity<OngResponse> buscarPorUsuarioId(
+            @Parameter(description = "ID do usuário responsável pela ONG", required = true) UUID usuarioId
+    );
 
     @Operation(summary = "Listar todas as ONGs", description = "Retorna o diretório público de todas as ONGs parceiras cadastradas.")
     @ApiResponses(value = {

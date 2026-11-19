@@ -59,7 +59,7 @@ public class OngController implements OngControllerDoc {
     }
 
     // Busca uma ONG pelo id do Usuario
-//    @Override
+    @Override
     @GetMapping("/usuario/{usuarioId}")
     public ResponseEntity<OngResponse> buscarPorUsuarioId(@PathVariable UUID usuarioId) {
         OngResponse response = ongService.buscarPorUsuarioId(usuarioId);

@@ -1,9 +1,21 @@
 // Definições de enums e constantes sincronizadas com o Backend do Pet Ajuda
 
 export const TIPO_PUBLICACAO = {
-    PERDIDO: { label: 'Perdido', classe: 'bg-orange-100 text-orange-700' },
-    ENCONTRADO: { label: 'Encontrado', classe: 'bg-green-100 text-green-700' },
-    ADOCAO: { label: 'Adoção', classe: 'bg-sky-100 text-sky-700' },
+    PERDIDO: {
+        label: 'Perdido',
+        classe: 'bg-rose-100 text-rose-700 border-rose-200',
+        botaoClasse: 'bg-rose-600 hover:bg-rose-700',
+    },
+    ENCONTRADO: {
+        label: 'Encontrado',
+        classe: 'bg-emerald-100 text-emerald-700 border-emerald-200',
+        botaoClasse: 'bg-emerald-600 hover:bg-emerald-700',
+    },
+    ADOCAO: {
+        label: 'Adoção',
+        classe: 'bg-sky-100 text-sky-700 border-sky-200',
+        botaoClasse: 'bg-sky-600 hover:bg-sky-700',
+    },
 }
 
 export const ESPECIE = {

@@ -1,23 +1,21 @@
 import {
-  Ban,
   BarChart3, Building, Building2,
   FileText,
   Gavel,
-  Hourglass,
   LogIn,
   Megaphone,
   PawPrint,
   PlusCircle, ShieldAlert, UserCog,
   UserPlus,
 } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useLocation } from 'react-router-dom'
-import { AdminDenuncias } from "../components/acoes/admin/AdminDenuncias"
-import { AdminMetricas } from "../components/acoes/admin/AdminMetricas"
-import { AdminModeracao } from "../components/acoes/admin/AdminModeracao"
-import { AdminOngs } from "../components/acoes/admin/AdminOngs"
+import { AdminDenuncias } from '../components/acoes/admin/AdminDenuncias'
+import { AdminMetricas } from '../components/acoes/admin/AdminMetricas'
+import { AdminModeracao } from '../components/acoes/admin/AdminModeracao'
 import { CampanhasOng } from '../components/acoes/campanhas/CampanhasOng'
 import DenunciaForm from '../components/acoes/denuncia/DenunciaForm'
+import { OngForm } from '../components/acoes/ongs/OngForm'
 import PublicacaoForm from '../components/acoes/publicacao/PublicacaoForm'
 import MeuPerfil from '../components/acoes/usuario/MeuPerfil'
 import MeusAnimais from '../components/acoes/usuario/MeusAnimais'
@@ -25,8 +23,6 @@ import MinhasPublicacoes from '../components/acoes/usuario/MinhasPublicacoes'
 import { Carregando } from '../components/ui/Ui'
 import { useAuth } from '../context/AuthContext'
 import { PERFIL } from '../data/enums'
-import { buscarOng } from '../services/ongService'
-import { OngForm } from '../components/acoes/ongs/OngForm'
 
 const ABAS = {
   VISITANTE: [
@@ -52,6 +48,7 @@ const ABAS = {
     { id: 'metricas', rotulo: 'Métricas', icone: BarChart3 },
     { id: 'denuncias', rotulo: 'Denúncias', icone: ShieldAlert },
     { id: 'moderacao', rotulo: 'Moderação', icone: Gavel },
+    { id: 'perfil', rotulo: 'Meu perfil', icone: UserCog },
   ],
 }
 
@@ -72,33 +69,10 @@ function ConviteLogin() {
   )
 }
 
-function AvisoOng({ status }) {
-  if (status === 'APROVADA' || !status) return null
-  const pendente = status === 'PENDENTE'
-  const Icone = pendente ? Hourglass : Ban
-  return (
-    <div className={`flex items-start gap-3 rounded-2xl p-4 text-sm border ${pendente ? 'bg-amber-50 text-amber-900 border-amber-200' : 'bg-rose-50 text-rose-800 border-rose-200'}`}>
-      <Icone className="h-5 w-5 shrink-0 mt-0.5" />
-      <p>
-        {pendente
-          ? 'Seu cadastro institucional está em análise. Você já pode preparar publicações e campanhas, mas elas só aparecem para o público depois da aprovação.'
-          : 'O cadastro da sua instituição foi reprovado. Revise os dados em "Instituição e perfil" e entre em contato com a administração.'}
-      </p>
-    </div>
-  )
-}
-
 function Painel({ perfil, abaInicial }) {
   const { usuario } = useAuth()
   const abas = ABAS[perfil] || ABAS.VISITANTE
   const [aba, setAba] = useState(abas.some((a) => a.id === abaInicial) ? abaInicial : abas[0].id)
-  const [statusOng, setStatusOng] = useState(null)
-
-  useEffect(() => {
-    if (perfil === 'ONG' && usuario?.ongId) {
-      buscarOng(usuario.ongId).then((o) => setStatusOng(o?.status))
-    }
-  }, [perfil, usuario])
 
   function conteudo() {
     switch (aba) {
@@ -123,7 +97,6 @@ function Painel({ perfil, abaInicial }) {
   return (
     <div className="flex flex-col gap-6">
       {perfil === 'VISITANTE' && <ConviteLogin />}
-      {perfil === 'ONG' && <AvisoOng status={statusOng} />}
 
       <div role="tablist" className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1">
         {abas.map(({ id, rotulo, icone: Icone }) => (
@@ -141,7 +114,6 @@ function Painel({ perfil, abaInicial }) {
   )
 }
 
-// No componente Acoes (linha final de Acoes.jsx):
 export default function Acoes() {
   const { usuario, pronto } = useAuth()
   const location = useLocation()

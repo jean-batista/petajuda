@@ -7,28 +7,33 @@ import { METHOD_TYPE } from '../data/enums'
 
 export async function obterMetricas() {
   try {
-    const [usersData, denunciasData] = await Promise.all([
+    const [usersData, denunciasData, ongsData, pubsData] = await Promise.all([
       api('/usuarios', {}, 'Falha ao carregar usuários.'),
-      api('/denuncias', {}, 'Falha ao carregar denúncias.')
+      api('/denuncias', {}, 'Falha ao carregar denúncias.'),
+      api('/ongs').catch(() => []),
+      api('/publicacoes').catch(() => []),
     ])
 
-    const listaUsers = usersData.content || usersData
-    const listaDenuncias = denunciasData.content || denunciasData
+    const listaUsers = usersData.content || usersData || []
+    const listaDenuncias = denunciasData.content || denunciasData || []
+    const listaOngs = ongsData.content || ongsData || []
+    const listaPubs = pubsData.content || pubsData || []
 
     return {
       totalUsuarios: listaUsers.length,
-      usuariosAtivos: listaUsers.filter(u => u.ativo).length,
-      totalOngs: 0,
+      usuariosAtivos: listaUsers.filter((u) => u.ativo !== false).length,
+      totalOngs: listaOngs.length,
       ongsPendentes: 0,
-      publicacoesAtivas: 0,
-      animaisResolvidos: 0,
+      publicacoesAtivas: listaPubs.filter((p) => p.status === 'ATIVO').length,
+      animaisResolvidos: listaPubs.filter((p) => p.status === 'RESOLVIDO').length,
       totalDenuncias: listaDenuncias.length,
-      denunciasPendentes: listaDenuncias.filter(d => d.status === 'PENDENTE').length,
+      denunciasPendentes: listaDenuncias.filter((d) => d.status === 'PENDENTE').length,
     }
   } catch (err) {
     console.error('Erro em obterMetricas:', err)
     return {
       totalUsuarios: 0,
+      usuariosAtivos: 0,
       totalOngs: 0,
       ongsPendentes: 0,
       publicacoesAtivas: 0,
@@ -60,15 +65,4 @@ export async function alternarStatusUsuarioAdmin(id, ativo) {
   return await api(`/usuarios/${id}/${endpoint}`, {
     method: METHOD_TYPE.PATCH
   }, `Falha ao ${endpoint} o usuário.`)
-}
-
-export async function listarOngsAdmin() {
-  const data = await api('/ongs', {}, 'Falha ao carregar lista de ONGs.')
-  return data.content || data
-}
-
-export async function atualizarStatusOngAdmin(id, status) {
-  return await api(`/ongs/${id}/status?status=${status}`, {
-    method: METHOD_TYPE.PATCH
-  }, 'Falha ao atualizar o status da ONG.')
 }

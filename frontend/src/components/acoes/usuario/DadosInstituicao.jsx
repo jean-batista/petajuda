@@ -1,10 +1,9 @@
 import { useEffect, useState } from 'react'
 import { useToast } from '../../../context/ToastContext'
-import { STATUS_ONG } from '../../../data/enums'
 import { atualizarOng, buscarOng } from '../../../services/ongService'
 import { formatarCnpj, formatarTelefone, somenteDigitos } from '../../../utils/format'
 import SeletorLocalidade from '../../ui/SeletorLocalidade'
-import { Campo, Carregando, Selo, botaoPrimario, inputClasse } from '../../ui/Ui'
+import { Campo, Carregando, botaoPrimario, inputClasse } from '../../ui/Ui'
 
 export function DadosInstituicao({ ongId }) {
   const toast = useToast()
@@ -71,14 +70,12 @@ export function DadosInstituicao({ ongId }) {
     }
   }
 
-  const infoStatus = STATUS_ONG[status] || { label: status, classe: 'bg-stone-100 text-stone-800 border-stone-200' }
   const caixa = 'flex flex-col gap-4 rounded-2xl border border-stone-200 bg-white p-5 shadow-sm'
 
   return (
     <form onSubmit={salvar} className={caixa} noValidate>
       <div className="flex items-center justify-between gap-2">
         <h3 className="font-semibold text-stone-900 text-base">Dados da Instituição (ONG / Protetor)</h3>
-        <Selo classe={`border ${infoStatus.classe}`}>{infoStatus.label}</Selo>
       </div>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Campo rotulo="Nome da instituição">{(id) => <input id={id} value={f.nome} onChange={mudar('nome')} className={inputClasse} />}</Campo>

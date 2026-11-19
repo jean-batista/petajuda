@@ -146,13 +146,3 @@ export async function atualizarOng(id, dados) {
     body: dados
   }, 'Falha ao atualizar dados da instituição.')
 }
-
-export async function listarTodasOngs() {
-  return await api('/ongs', {}, 'Falha ao carregar listagem administrativa de ONGs.')
-}
-
-export async function alterarStatusOng(id, status) {
-  return await api(`/ongs/${id}/status?status=${status}`, {
-    method: 'PATCH'
-  }, 'Falha ao alterar o status institucional da ONG.')
-}

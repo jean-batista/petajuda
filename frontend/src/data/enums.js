@@ -6,10 +6,9 @@ export const TIPO_PUBLICACAO = {
     ADOCAO: { label: 'Adoção', classe: 'bg-sky-100 text-sky-700' },
 }
 
-// Mapeamento expandido para contemplar todas as espécies do Backend (EspecieAnimal)
-export const ESPECIE = { 
-    CACHORRO: 'Cachorro', 
-    GATO: 'Gato', 
+export const ESPECIE = {
+    CACHORRO: 'Cachorro',
+    GATO: 'Gato',
     PASSARO: 'Pássaro / Ave',
     EQUINO: 'Equino (Cavalo / Pônei)',
     ROEDOR: 'Roedor (Coelho / Hamster)',
@@ -17,7 +16,6 @@ export const ESPECIE = {
     OUTRO: 'Outro'
 }
 
-// Mantido alias para compatibilidade com componentes existentes que utilizam ESPECIE_ANIMAL
 export const ESPECIE_ANIMAL = ESPECIE
 
 export const PORTE = { PEQUENO: 'Pequeno', MEDIO: 'Médio', GRANDE: 'Grande' }
@@ -42,17 +40,10 @@ export const ROTULO_RESOLVIDO = {
 }
 
 export const STATUS_DENUNCIA = {
-    PENDENTE: { label: 'Pendente', classe: 'bg-amber-100 text-amber-700' },
-    EM_ANALISE: { label: 'Em análise', classe: 'bg-sky-100 text-sky-700' },
-    CONCLUIDA: { label: 'Concluída', classe: 'bg-green-100 text-green-700' },
-    REJEITADA: { label: 'Rejeitada', classe: 'bg-stone-200 text-stone-600' },
-    DESCARTADA: { label: 'Descartada', classe: 'bg-stone-200 text-stone-600' },
-}
-
-export const STATUS_ONG = {
-    PENDENTE: { label: 'Pendente', classe: 'bg-amber-100 text-amber-700' },
-    APROVADA: { label: 'Aprovada', classe: 'bg-green-100 text-green-700' },
-    REPROVADA: { label: 'Reprovada', classe: 'bg-red-100 text-red-700' },
+    PENDENTE: { label: 'Pendente', classe: 'bg-amber-100 text-amber-800 border-amber-200' },
+    EM_ANALISE: { label: 'Em análise', classe: 'bg-sky-100 text-sky-800 border-sky-200' },
+    CONCLUIDA: { label: 'Concluída', classe: 'bg-emerald-100 text-emerald-800 border-emerald-200' },
+    REJEITADA: { label: 'Rejeitada', classe: 'bg-rose-100 text-rose-800 border-rose-200' },
 }
 
 export const PERFIL = {

@@ -1,6 +1,7 @@
 import { MapPin, ShieldAlert } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 import { useToast } from '../../../context/ToastContext'
+import { STATUS_DENUNCIA } from '../../../data/enums'
 import { atualizarStatusDenuncia, listarDenunciasAdmin } from '../../../services/adminService'
 import { formatarData } from '../../../utils/format'
 import Modal from '../../ui/Modal'
@@ -10,15 +11,7 @@ export function AdminDenuncias() {
   const toast = useToast()
   const [lista, setLista] = useState(null)
   const [aberta, setAberta] = useState(null)
-  const [novoStatus, setNovoStatus] = useState('')
-
-  const STATUS_DENUNCIA = {
-    PENDENTE: { label: 'Pendente', classe: 'bg-amber-100 text-amber-800 border-amber-200' },
-    EM_ANALISE: { label: 'Em Análise', classe: 'bg-blue-100 text-blue-800 border-blue-200' },
-    CONCLUIDA: { label: 'Concluída', classe: 'bg-emerald-100 text-emerald-800 border-emerald-200' },
-    RESOLVIDO: { label: 'Resolvido', classe: 'bg-emerald-100 text-emerald-800 border-emerald-200' },
-    DESCARTADA: { label: 'Descartada', classe: 'bg-stone-100 text-stone-800 border-stone-200' }
-  }
+  const [novoStatus, setNovoStatus] = useState('PENDENTE')
 
   const carregar = useCallback(async () => {
     try {
@@ -69,7 +62,15 @@ export function AdminDenuncias() {
                   <td className="max-w-xs truncate px-4 py-3 font-medium text-stone-700">{d.titulo}</td>
                   <td className="px-4 py-3"><Selo classe={`border ${infoStatus.classe}`}>{infoStatus.label}</Selo></td>
                   <td className="px-4 py-3 text-right">
-                    <button onClick={() => { setAberta(d); setNovoStatus(d.status) }} className={`${botaoSecundario} !px-3 !py-1.5`}>Analisar</button>
+                    <button
+                      onClick={() => {
+                        setAberta(d)
+                        setNovoStatus(STATUS_DENUNCIA[d.status] ? d.status : 'PENDENTE')
+                      }}
+                      className={`${botaoSecundario} !px-3 !py-1.5`}
+                    >
+                      Analisar
+                    </button>
                   </td>
                 </tr>
               )
@@ -85,9 +86,9 @@ export function AdminDenuncias() {
               <p className="text-xs font-mono text-stone-400 mb-1">Protocolo: {aberta.id}</p>
               <h3 className="font-bold text-lg text-stone-800 leading-tight">{aberta.titulo}</h3>
             </div>
-            
+
             <p className="text-sm text-stone-700 leading-relaxed bg-stone-50 p-3 rounded-xl border border-stone-100">{aberta.descricao}</p>
-            
+
             <div className="rounded-xl bg-emerald-50/50 p-3 border border-emerald-100/50">
               <p className="flex items-start gap-2 text-sm">
                 <MapPin className="h-4 w-4 shrink-0 text-emerald-600 mt-0.5" />
@@ -103,7 +104,7 @@ export function AdminDenuncias() {
                 <p className="text-sm text-stone-400">Nenhuma evidência fotográfica anexada.</p>
               </div>
             )}
-            
+
             <div className="flex flex-col gap-3 sm:flex-row sm:items-end mt-2 pt-4 border-t border-stone-100">
               <label className="flex flex-1 flex-col gap-1.5 text-sm font-medium text-stone-700">
                 Alterar status de triagem

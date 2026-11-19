@@ -17,7 +17,11 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.petajuda.dtos.EnderecoDto;
 import com.petajuda.dtos.request.PublicacaoRequest;
+import com.petajuda.dtos.response.AnimalResponse;
 import com.petajuda.dtos.response.PublicacaoResponse;
+import com.petajuda.enums.EspecieAnimal;
+import com.petajuda.enums.IdadeAnimal;
+import com.petajuda.enums.PorteAnimal;
 import com.petajuda.enums.StatusPublicacao;
 import com.petajuda.enums.TipoPublicacao;
 import com.petajuda.exceptions.RegraDeNegocioException;
@@ -79,12 +83,11 @@ class PublicacaoServiceTest {
         animalId = UUID.randomUUID();
         publicacaoId = UUID.randomUUID();
 
-        // Instância padrão de arquivo simulado para testes que exigem upload
         fotoPadrao = new MockMultipartFile(
-                "foto",                  // Nome do campo (@RequestPart)
-                "cachorro.jpg",          // Nome original do arquivo
-                "image/jpeg",            // Content-Type válido
-                "conteudo_fake".getBytes() // Bytes simulados (garante isEmpty() == false)
+                "foto",
+                "cachorro.jpg",
+                "image/jpeg",
+                "conteudo_fake".getBytes()
         );
 
         Endereco endereco = new Endereco("SC", "Tubarão", "Oficinas", "Rua A", "100");
@@ -97,7 +100,23 @@ class PublicacaoServiceTest {
         animal = new Animal();
         animal.setId(animalId);
         animal.setNome("Thor");
-        animal.setUsuario(usuarioLogado); // Animal pertence à Maria
+        animal.setFotoUrl("url_foto_thor");
+        animal.setUsuario(usuarioLogado);
+
+        AnimalResponse animalResponse = new AnimalResponse(
+                animalId,
+                "Thor",
+                "MACHO",
+                "Caramelo",
+                true,
+                true,
+                "Dócil e brincalhão",
+                "url_foto_thor",
+                IdadeAnimal.ADULTO,
+                PorteAnimal.GRANDE,
+                EspecieAnimal.CACHORRO,
+                usuarioId
+        );
 
         publicacao = new Publicacao();
         publicacao.setId(publicacaoId);
@@ -115,10 +134,18 @@ class PublicacaoServiceTest {
         );
 
         publicacaoResponse = new PublicacaoResponse(
-                publicacaoId, "Cachorro Perdido", "Fugiu no bairro Oficinas", "publicacao_url",
-                publicacao.getData(), StatusPublicacao.ATIVO, TipoPublicacao.PERDIDO, enderecoDto,
-                usuarioId, "Maria", "48999999999",
-                animalId, "Thor", "url_foto_thor"
+                publicacaoId,
+                "Cachorro Perdido",
+                "Fugiu no bairro Oficinas",
+                "url_foto_thor",
+                publicacao.getData(),
+                StatusPublicacao.ATIVO,
+                TipoPublicacao.PERDIDO,
+                enderecoDto,
+                usuarioId,
+                "Maria",
+                "48999999999",
+                animalResponse
         );
     }
 
@@ -135,12 +162,14 @@ class PublicacaoServiceTest {
         when(repository.save(publicacao)).thenReturn(publicacao);
         when(mapper.paraDto(publicacao)).thenReturn(publicacaoResponse);
 
-        // Passando null na foto para simular a herança da foto do Animal vinculado
-        PublicacaoResponse response = publicacaoService.salvar(usuarioId, publicacaoRequest, fotoPadrao);
+        // Passando null na foto para herdar a foto do Animal vinculado
+        PublicacaoResponse response = publicacaoService.salvar(usuarioId, publicacaoRequest, null);
 
         assertThat(response).isNotNull();
         assertThat(response.titulo()).isEqualTo("Cachorro Perdido");
-        assertThat(publicacao.getStatus()).isEqualTo(StatusPublicacao.ATIVO); // Nasce ativa
+        assertThat(publicacao.getStatus()).isEqualTo(StatusPublicacao.ATIVO);
+        assertThat(publicacao.getFotoUrl()).isEqualTo("url_foto_thor");
+        verify(cloudinaryService, never()).enviarFoto(any(), any());
         verify(repository).save(publicacao);
     }
 
@@ -150,7 +179,7 @@ class PublicacaoServiceTest {
         UUID outroUsuarioId = UUID.randomUUID();
         Usuario outroUsuario = new Usuario();
         outroUsuario.setId(outroUsuarioId);
-        animal.setUsuario(outroUsuario); // Animal pertence a outra pessoa
+        animal.setUsuario(outroUsuario);
 
         when(usuarioRepository.findById(usuarioId)).thenReturn(Optional.of(usuarioLogado));
         when(animalRepository.findById(animalId)).thenReturn(Optional.of(animal));
@@ -255,6 +284,7 @@ class PublicacaoServiceTest {
     @DisplayName("Atualizar: Deve atualizar os dados se o usuário logado for dono do post")
     void deveAtualizarPublicacaoComSucesso() {
         when(repository.findById(publicacaoId)).thenReturn(Optional.of(publicacao));
+        when(enderecoMapper.paraEntidade(publicacaoRequest.endereco())).thenReturn(publicacao.getEndereco());
         when(repository.save(publicacao)).thenReturn(publicacao);
         when(mapper.paraDto(publicacao)).thenReturn(publicacaoResponse);
 
@@ -267,7 +297,7 @@ class PublicacaoServiceTest {
     @Test
     @DisplayName("Atualizar: Deve lançar UsuarioNaoAutorizadoException se outro usuário tentar alterar")
     void deveLancarExcecaoAoAtualizarPostDeOutroUsuario() {
-        UUID outroUsuarioId = UUID.randomUUID(); // Alguém tentado invadir o post
+        UUID outroUsuarioId = UUID.randomUUID();
 
         when(repository.findById(publicacaoId)).thenReturn(Optional.of(publicacao));
 

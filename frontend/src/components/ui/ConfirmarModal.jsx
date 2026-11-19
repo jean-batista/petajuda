@@ -1,5 +1,5 @@
 import Modal from './Modal'
-import { botaoSecundario, botaoPerigo } from './ui'
+import { botaoSecundario, botaoPerigo } from './Ui'
 
 // "Tem certeza?" antes de ações sem volta, como excluir
 export default function ConfirmarModal({ titulo, texto, rotuloConfirmar = 'Excluir', onConfirmar, onFechar, ocupado }) {

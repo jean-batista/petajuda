@@ -1,10 +1,9 @@
 package com.petajuda.dtos.response;
 
+import com.petajuda.dtos.EnderecoDto;
+
 import java.util.List;
 import java.util.UUID;
-
-import com.petajuda.dtos.EnderecoDto;
-import com.petajuda.model.Campanha;
 
 public record OngResponse(
     UUID id,
@@ -13,7 +12,7 @@ public record OngResponse(
     String cnpj,
     String chavePix,
     String descricao,
-    List<Campanha> campanhas,
+    List<CampanhaResponse> campanhas,
     EnderecoDto endereco,
 
     UUID usuarioId

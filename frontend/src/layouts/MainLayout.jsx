@@ -1,6 +1,6 @@
 import { Outlet, useLocation } from 'react-router-dom'
 import { useEffect } from 'react'
-import Navbar from '../components/Navbar'
+import Navbar from '../components/ui/Navbar'
 import AuthModals from '../components/auth/AuthModals'
 
 // moldura de todas as páginas: Navbar em cima, rodapé embaixo
@@ -21,7 +21,7 @@ export default function MainLayout() {
       <footer className="border-t border-stone-200 bg-white py-8">
         <div className="mx-auto flex max-w-6xl flex-col items-center gap-3 px-4 text-center">
           <img src="/logo-completa.png" alt="Pet Ajuda: conectando pessoas e animais por um mundo melhor" className="h-24 w-auto" loading="lazy" />
-          <p className="text-sm text-stone-500">Proteção animal na AMUREL · Tubarão e região</p>
+          <p className="text-sm text-stone-500">Proteção animal na sua região</p>
         </div>
       </footer>
       <AuthModals />

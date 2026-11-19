@@ -1,36 +1,52 @@
-import dados, { salvar, gerarId, esperar } from '../data/store'
+/**
+ * @file denunciaService.js
+ * @description Serviço de integração frontend para o módulo de Denúncias do Pet Ajuda.
+ */
+import { api } from '../api/api'
+import { METHOD_TYPE } from '../data/enums'
 
-// futuro: POST /api/denuncias  (público e anônimo: não guarda quem enviou)
-export async function criarDenuncia({ descricao, fotoUrl, endereco }) {
-  await esperar()
-  const denuncia = {
-    id: gerarId('d'), descricao, fotoUrl: fotoUrl || '',
-    data: new Date().toISOString(), status: 'PENDENTE',
-    endereco: { estado: 'SC', ...endereco },
+export async function criarDenuncia(dados, fotoArquivo = null) {
+  const formData = new FormData()
+  
+  formData.append('dados', new Blob([JSON.stringify({
+    titulo: dados.titulo || 'Denúncia de maus-tratos / abandono',
+    descricao: dados.descricao,
+    endereco: dados.endereco
+  })], { type: 'application/json' }))
+
+  if (fotoArquivo) {
+    formData.append('foto', fotoArquivo)
+  } else {
+    formData.append('foto', new Blob([], { type: 'image/jpeg' }), 'vazio.jpg')
   }
-  dados.denuncias.unshift(denuncia)
-  salvar()
-  return denuncia
+
+  return await api('/denuncias', {
+    method: METHOD_TYPE.POST,
+    body: formData
+  }, 'Falha ao registrar a denúncia anônima.')
 }
 
-// acompanhamento pelo denunciante (RF14): com o protocolo ele vê só a situação
 export async function consultarDenuncia(protocolo) {
-  await esperar(150)
-  const denuncia = dados.denuncias.find((d) => d.id === protocolo.trim())
-  return denuncia ? { status: denuncia.status, data: denuncia.data } : null
+  if (!protocolo || !protocolo.trim()) return null
+  try {
+    const data = await api(`/denuncias/${protocolo.trim()}`)
+    if (!data) return null
+    return {
+      status: data.status,
+      data: data.data || data.dataRegistro
+    }
+  } catch {
+    return null
+  }
 }
 
-// futuro: GET /api/denuncias (ADMIN)
 export async function listarDenuncias() {
-  await esperar(150)
-  return [...dados.denuncias].sort((a, b) => new Date(b.data) - new Date(a.data))
+  const data = await api('/denuncias', {}, 'Falha ao carregar a triagem de denúncias.')
+  return data.content || data
 }
 
-// futuro: PATCH /api/denuncias/{id}/status (ADMIN)
 export async function alterarStatusDenuncia(id, status) {
-  await esperar(150)
-  const denuncia = dados.denuncias.find((d) => d.id === id)
-  denuncia.status = status
-  salvar()
-  return denuncia
+  return await api(`/denuncias/${id}/status?status=${status}`, {
+    method: METHOD_TYPE.PATCH
+  }, 'Falha ao atualizar o status da denúncia.')
 }

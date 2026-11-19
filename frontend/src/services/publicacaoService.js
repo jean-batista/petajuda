@@ -1,97 +1,86 @@
-import dados, { salvar, gerarId, esperar } from '../data/store'
+/**
+ * @file publicacaoService.js
+ * @description Serviço de integração frontend para o módulo de Publicações e Feed do Pet Ajuda.
+ */
+import { api } from '../api/api'
+import { METHOD_TYPE } from '../data/enums'
 
-// publicações de ONGs ainda não aprovadas não aparecem no feed público
-function visivel(publicacao) {
-  const ongId = publicacao.autor?.ongId
-  if (!ongId) return true
-  const ong = dados.ongs.find((o) => o.id === ongId)
-  return !ong || ong.status === 'APROVADA'
-}
-
-const maisRecentesPrimeiro = (a, b) => new Date(b.data) - new Date(a.data)
-
-// futuro: GET /api/publicacoes  (mesmos nomes de query params da documentação)
 export async function listarPublicacoes(filtros = {}) {
-  await esperar(200)
-  return dados.publicacoes
-    .filter((p) =>
-      visivel(p) &&
-      (!filtros.tipoPublicacao || p.tipoPublicacao === filtros.tipoPublicacao) &&
-      (!filtros.especie || p.animal.especieAnimal === filtros.especie) &&
-      (!filtros.porte || p.animal.porteAnimal === filtros.porte) &&
-      (!filtros.cidade || p.endereco.cidade === filtros.cidade) &&
-      (!filtros.status || p.status === filtros.status)
-    )
-    .sort(maisRecentesPrimeiro)
+  try {
+    const publicacoes = await api.get('/publicacoes')
+    if (!Array.isArray(publicacoes)) return []
+
+    return publicacoes.filter((p) => {
+      const tipoPub = p.tipo || p.tipoPublicacao
+      const especiePet = p.especie || p.animal?.especie || p.animal?.especieAnimal
+      const portePet = p.porte || p.animal?.porte || p.animal?.porteAnimal
+      const cidadePub = p.endereco?.cidade
+
+      const atendeTipo = !filtros.tipoPublicacao || tipoPub === filtros.tipoPublicacao
+      const atendeEspecie = !filtros.especie || especiePet === filtros.especie
+      const atendePorte = !filtros.porte || portePet === filtros.porte
+      const atendeCidade = !filtros.cidade || cidadePub === filtros.cidade
+      const atendeStatus = !filtros.status || p.status === filtros.status
+      return atendeTipo && atendeEspecie && atendePorte && atendeCidade && atendeStatus
+    })
+  } catch (err) {
+    console.error('Erro em listarPublicacoes:', err)
+    return []
+  }
 }
 
-// futuro: GET /api/publicacoes/{id}
 export async function buscarPublicacao(id) {
-  await esperar(150)
-  return dados.publicacoes.find((p) => p.id === id) ?? null
+  if (!id) return null
+  try {
+    return await api(`/publicacoes/${id}`)
+  } catch {
+    return null
+  }
 }
 
 export async function listarPublicacoesDoAutor(usuarioId) {
-  await esperar(150)
-  return dados.publicacoes.filter((p) => p.autor.usuarioId === usuarioId).sort(maisRecentesPrimeiro)
+  if (!usuarioId) return []
+  try {
+    const publicacoes = await api('/publicacoes')
+    if (!Array.isArray(publicacoes)) return []
+    return publicacoes.filter((p) => p.usuarioId === usuarioId || p.autor?.usuarioId === usuarioId)
+  } catch (err) {
+    console.error('Erro em listarPublicacoesDoAutor:', err)
+    return []
+  }
 }
 
-// todas, sem filtro de visibilidade (painel do admin)
 export async function listarTodasPublicacoes() {
-  await esperar(150)
-  return [...dados.publicacoes].sort(maisRecentesPrimeiro)
-}
-
-function montarAutor(usuario, exibirTelefone) {
-  const ong = usuario.ongId ? dados.ongs.find((o) => o.id === usuario.ongId) : null
-  return {
-    usuarioId: usuario.id,
-    nome: ong ? ong.nome : `${usuario.nome} ${usuario.sobrenome}`.trim(),
-    telefone: usuario.telefone,
-    exibirTelefone,
-    ...(ong ? { ongId: ong.id } : {}),
+  try {
+    return await api('/publicacoes', {}, 'Falha ao carregar listagem geral.')
+  } catch {
+    return []
   }
 }
 
-// futuro: POST /api/animais + POST /api/publicacoes (ficha do pet e depois o post)
-export async function criarPublicacao({ titulo, descricao, tipoPublicacao, animal, endereco, exibirTelefone }, usuario) {
-  await esperar()
-  const publicacao = {
-    id: gerarId('p'), titulo, descricao, tipoPublicacao, status: 'ATIVO',
-    data: new Date().toISOString(),
-    animal: { id: gerarId('a'), ...animal },
-    endereco: { estado: 'SC', ...endereco },
-    autor: montarAutor(usuario, exibirTelefone),
-  }
-  dados.publicacoes.unshift(publicacao)
-  salvar()
-  return publicacao
+export async function criarPublicacao(formData) {
+  return await api('/publicacoes', {
+    method: METHOD_TYPE.POST,
+    body: formData
+  }, 'Falha ao criar a publicação no sistema.')
 }
 
-// futuro: PUT /api/animais/{id}
-export async function atualizarPublicacao(id, { titulo, descricao, tipoPublicacao, animal, endereco, exibirTelefone }) {
-  await esperar()
-  const publicacao = dados.publicacoes.find((p) => p.id === id)
-  Object.assign(publicacao, { titulo, descricao, tipoPublicacao })
-  publicacao.animal = { ...publicacao.animal, ...animal }
-  publicacao.endereco = { ...publicacao.endereco, ...endereco }
-  publicacao.autor = { ...publicacao.autor, exibirTelefone }
-  salvar()
-  return publicacao
+export async function atualizarPublicacao(id, formData) {
+  return await api(`/publicacoes/${id}`, {
+    method: METHOD_TYPE.PUT,
+    body: formData
+  }, 'Falha ao atualizar a publicação.')
 }
 
-// futuro: PATCH /api/publicacoes/{id}/status
 export async function alterarStatusPublicacao(id, status) {
-  await esperar(150)
-  const publicacao = dados.publicacoes.find((p) => p.id === id)
-  publicacao.status = status
-  salvar()
-  return publicacao
+  return await api(`/publicacoes/${id}/status?status=${status}`, {
+    method: METHOD_TYPE.PATCH
+  }, 'Falha ao alterar o status da publicação.')
 }
 
-// futuro: DELETE /api/publicacoes/{id}
 export async function excluirPublicacao(id) {
-  await esperar(150)
-  dados.publicacoes = dados.publicacoes.filter((p) => p.id !== id)
-  salvar()
+  await api(`/publicacoes/${id}`, {
+    method: METHOD_TYPE.DELETE
+  }, 'Falha ao excluir a publicação.')
+  return true
 }

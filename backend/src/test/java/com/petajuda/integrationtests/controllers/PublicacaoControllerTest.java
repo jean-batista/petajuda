@@ -168,7 +168,7 @@ public class PublicacaoControllerTest extends AbstractIntegrationTest {
 
         assertThat(id).isNotNull();
         assertThat(response.jsonPath().getString("titulo")).isEqualTo("Gatinha Perdida");
-        assertThat(response.jsonPath().getString("animalId")).isEqualTo(this.animalId);
+        assertThat(response.jsonPath().getString("animal.id")).isEqualTo(this.animalId);
         assertThat(response.jsonPath().getString("status")).isEqualTo(StatusPublicacao.ATIVO.name());
         assertThat(response.jsonPath().getString("fotoUrl")).isEqualTo(FOTO_ANIMAL_MOCK);
     }

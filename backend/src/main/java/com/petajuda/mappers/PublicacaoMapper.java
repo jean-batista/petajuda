@@ -14,7 +14,7 @@ import com.petajuda.model.Publicacao;
     ======================================================================================
 */
 
-@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE, uses = {EnderecoMapper.class})
+@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE, uses = {EnderecoMapper.class, AnimalMapper.class})
 public interface PublicacaoMapper {
 
     // Converte um Dto PublicacaoRequest em uma entidade Publicacao
@@ -29,8 +29,6 @@ public interface PublicacaoMapper {
     @Mapping(target = "usuarioId", source = "usuario.id")
     @Mapping(target = "usuarioNome", source = "usuario.nome")
     @Mapping(target = "usuarioTelefone", source = "usuario.telefone")
-    @Mapping(target = "animalId", source = "animal.id")
-    @Mapping(target = "animalNome", source = "animal.nome")
-    @Mapping(target = "animalFotoUrl", source = "animal.fotoUrl")
+    @Mapping(target = "animal", source = "animal")
     PublicacaoResponse paraDto(Publicacao publicacao);
 }

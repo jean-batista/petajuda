@@ -16,6 +16,7 @@ import com.petajuda.dtos.request.PublicacaoRequest;
 import com.petajuda.dtos.response.PublicacaoResponse;
 import com.petajuda.enums.StatusPublicacao;
 import com.petajuda.enums.TipoPublicacao;
+import com.petajuda.mappers.AnimalMapper;
 import com.petajuda.mappers.EnderecoMapper;
 import com.petajuda.mappers.PublicacaoMapper;
 import com.petajuda.model.Animal;
@@ -31,7 +32,10 @@ class PublicacaoMapperTest {
     void setUp() {
         publicacaoMapper = Mappers.getMapper(PublicacaoMapper.class);
         EnderecoMapper enderecoMapper = Mappers.getMapper(EnderecoMapper.class);
+        AnimalMapper animalMapper = Mappers.getMapper(AnimalMapper.class);
+
         ReflectionTestUtils.setField(publicacaoMapper, "enderecoMapper", enderecoMapper);
+        ReflectionTestUtils.setField(publicacaoMapper, "animalMapper", animalMapper);
     }
 
     @Test
@@ -56,7 +60,7 @@ class PublicacaoMapperTest {
     }
 
     @Test
-    @DisplayName("PublicacaoMapper: Deve mapear Entidade Publicacao para PublicacaoResponse achatando Usuario e Animal")
+    @DisplayName("PublicacaoMapper: Deve mapear Entidade Publicacao para PublicacaoResponse achatando Usuario e mapeando Animal")
     void deveMapearEntidadePublicacaoParaResponse() {
         UUID usuarioId = UUID.randomUUID();
         Usuario usuario = new Usuario();
@@ -90,16 +94,17 @@ class PublicacaoMapperTest {
         assertThat(response).isNotNull();
         assertThat(response.id()).isEqualTo(entidade.getId());
         assertThat(response.titulo()).isEqualTo(entidade.getTitulo());
-        
+
         // Valida atributos achatados do Usuario
         assertThat(response.usuarioId()).isEqualTo(usuarioId);
         assertThat(response.usuarioNome()).isEqualTo("Carlos");
         assertThat(response.usuarioTelefone()).isEqualTo("48977776666");
 
-        // Valida atributos achatados do Animal
-        assertThat(response.animalId()).isEqualTo(animalId);
-        assertThat(response.animalNome()).isEqualTo("Thor");
-        assertThat(response.animalFotoUrl()).isEqualTo("http://foto.com/thor.jpg");
+        // Valida objeto Animal mapeado
+        assertThat(response.animal()).isNotNull();
+        assertThat(response.animal().id()).isEqualTo(animalId);
+        assertThat(response.animal().nome()).isEqualTo("Thor");
+        assertThat(response.animal().fotoUrl()).isEqualTo("http://foto.com/thor.jpg");
 
         // Valida Endereco embutido
         assertThat(response.endereco()).isNotNull();
